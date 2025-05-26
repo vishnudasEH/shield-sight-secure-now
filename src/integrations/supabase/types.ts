@@ -1,0 +1,824 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  public: {
+    Tables: {
+      asset_inventory: {
+        Row: {
+          asset_type: string | null
+          business_unit: string | null
+          created_at: string | null
+          environment: string | null
+          hostname: string | null
+          id: string
+          ip_address: string | null
+          last_scan_date: string | null
+          location: string | null
+          name: string
+          operating_system: string | null
+          owner_email: string | null
+          risk_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_type?: string | null
+          business_unit?: string | null
+          created_at?: string | null
+          environment?: string | null
+          hostname?: string | null
+          id?: string
+          ip_address?: string | null
+          last_scan_date?: string | null
+          location?: string | null
+          name: string
+          operating_system?: string | null
+          owner_email?: string | null
+          risk_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_type?: string | null
+          business_unit?: string | null
+          created_at?: string | null
+          environment?: string | null
+          hostname?: string | null
+          id?: string
+          ip_address?: string | null
+          last_scan_date?: string | null
+          location?: string | null
+          name?: string
+          operating_system?: string | null
+          owner_email?: string | null
+          risk_score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      assets: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address: string
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          object_id: string
+          object_type: string
+          timestamp: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          object_id: string
+          object_type: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          object_id?: string
+          object_type?: string
+          timestamp?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      nessus_1: {
+        Row: {
+          canvas: string | null
+          core: boolean | null
+          created_at: string | null
+          cve: string[] | null
+          cvss_v2_base_score: number | null
+          cvss_v3_base_score: number | null
+          cvss_v4_base_score: number | null
+          cvss_v4_base_threat_score: number | null
+          description: string | null
+          host: string | null
+          id: string
+          impact: string | null
+          metasploit: boolean | null
+          name: string | null
+          plugin: string | null
+          plugin_output: string | null
+          port: number | null
+          protocol: string | null
+          risk: string | null
+          solution: string | null
+          synopsis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canvas?: string | null
+          core?: boolean | null
+          created_at?: string | null
+          cve?: string[] | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          host?: string | null
+          id?: string
+          impact?: string | null
+          metasploit?: boolean | null
+          name?: string | null
+          plugin?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canvas?: string | null
+          core?: boolean | null
+          created_at?: string | null
+          cve?: string[] | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          host?: string | null
+          id?: string
+          impact?: string | null
+          metasploit?: boolean | null
+          name?: string | null
+          plugin?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nessus_24may: {
+        Row: {
+          canvas: string | null
+          Canvas: string | null
+          "core impact": string | null
+          created_at: string | null
+          cve: string[] | null
+          "cvss v2.0 base score": string | null
+          cvss_v3_base_score: number | null
+          cvss_v4_base_score: number | null
+          cvss_v4_base_threat_score: number | null
+          description: string | null
+          host: string | null
+          id: string
+          metasploit: boolean | null
+          name: string | null
+          plugin: string | null
+          plugin_output: string | null
+          port: number | null
+          protocol: string | null
+          risk: string | null
+          "see also": string | null
+          solution: string | null
+          synopsis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canvas?: string | null
+          Canvas?: string | null
+          "core impact"?: string | null
+          created_at?: string | null
+          cve?: string[] | null
+          "cvss v2.0 base score"?: string | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          host?: string | null
+          id?: string
+          metasploit?: boolean | null
+          name?: string | null
+          plugin?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          "see also"?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canvas?: string | null
+          Canvas?: string | null
+          "core impact"?: string | null
+          created_at?: string | null
+          cve?: string[] | null
+          "cvss v2.0 base score"?: string | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          host?: string | null
+          id?: string
+          metasploit?: boolean | null
+          name?: string | null
+          plugin?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          "see also"?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nessus_csv: {
+        Row: {
+          asset: string | null
+          canvas: boolean | null
+          core_impact: boolean | null
+          created_at: string | null
+          cvss_v2_base_score: number | null
+          cvss_v3_base_score: number | null
+          cvss_v4_base_score: number | null
+          cvss_v4_base_threat_score: number | null
+          description: string | null
+          external_id: string | null
+          id: string
+          metasploit: boolean | null
+          name: string | null
+          plugin_id: string | null
+          plugin_output: string | null
+          port: number | null
+          protocol: string | null
+          see_also: string | null
+          severity: string | null
+          solution: string | null
+          synopsis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset?: string | null
+          canvas?: boolean | null
+          core_impact?: boolean | null
+          created_at?: string | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          metasploit?: boolean | null
+          name?: string | null
+          plugin_id?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          see_also?: string | null
+          severity?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset?: string | null
+          canvas?: boolean | null
+          core_impact?: boolean | null
+          created_at?: string | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          metasploit?: boolean | null
+          name?: string | null
+          plugin_id?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          see_also?: string | null
+          severity?: string | null
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nessus_duplicate: {
+        Row: {
+          Canvas: string | null
+          Core_Impact: string | null
+          created_at: string | null
+          CVE: string[] | null
+          "CVSS v2.0 Base Score": number | null
+          "CVSS_v3.0_Base_Score": number | null
+          "CVSS_v4.0_Base_Score": number | null
+          "CVSS_v4.0_Base+Threat_Score": number | null
+          Description: string | null
+          Host: string | null
+          id: string
+          Metasploit: boolean | null
+          Name: string | null
+          Plugin_ID: string | null
+          Plugin_Output: string | null
+          Port: number | null
+          Protocol: string | null
+          Risk: string | null
+          Solution: string | null
+          Synopsis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          Canvas?: string | null
+          Core_Impact?: string | null
+          created_at?: string | null
+          CVE?: string[] | null
+          "CVSS v2.0 Base Score"?: number | null
+          "CVSS_v3.0_Base_Score"?: number | null
+          "CVSS_v4.0_Base_Score"?: number | null
+          "CVSS_v4.0_Base+Threat_Score"?: number | null
+          Description?: string | null
+          Host?: string | null
+          id?: string
+          Metasploit?: boolean | null
+          Name?: string | null
+          Plugin_ID?: string | null
+          Plugin_Output?: string | null
+          Port?: number | null
+          Protocol?: string | null
+          Risk?: string | null
+          Solution?: string | null
+          Synopsis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          Canvas?: string | null
+          Core_Impact?: string | null
+          created_at?: string | null
+          CVE?: string[] | null
+          "CVSS v2.0 Base Score"?: number | null
+          "CVSS_v3.0_Base_Score"?: number | null
+          "CVSS_v4.0_Base_Score"?: number | null
+          "CVSS_v4.0_Base+Threat_Score"?: number | null
+          Description?: string | null
+          Host?: string | null
+          id?: string
+          Metasploit?: boolean | null
+          Name?: string | null
+          Plugin_ID?: string | null
+          Plugin_Output?: string | null
+          Port?: number | null
+          Protocol?: string | null
+          Risk?: string | null
+          Solution?: string | null
+          Synopsis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      remediation_tickets: {
+        Row: {
+          asset_id: string | null
+          assigned_team: string | null
+          change_management_id: string | null
+          created_at: string | null
+          downtime_required: boolean | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          patch_id: string | null
+          root_cause: string | null
+          status: string | null
+          updated_at: string | null
+          vulnerability_id: string | null
+          workaround_available: boolean | null
+        }
+        Insert: {
+          asset_id?: string | null
+          assigned_team?: string | null
+          change_management_id?: string | null
+          created_at?: string | null
+          downtime_required?: boolean | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          patch_id?: string | null
+          root_cause?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vulnerability_id?: string | null
+          workaround_available?: boolean | null
+        }
+        Update: {
+          asset_id?: string | null
+          assigned_team?: string | null
+          change_management_id?: string | null
+          created_at?: string | null
+          downtime_required?: boolean | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          patch_id?: string | null
+          root_cause?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vulnerability_id?: string | null
+          workaround_available?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remediation_tickets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "asset_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remediation_tickets_vulnerability_id_fkey"
+            columns: ["vulnerability_id"]
+            isOneToOne: false
+            referencedRelation: "vulnerability_repository"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_management: {
+        Row: {
+          created_at: string | null
+          credentials_used: boolean | null
+          id: string
+          log_file: string | null
+          report_url: string | null
+          scan_profile: string | null
+          scan_target: string | null
+          scanner_type: string | null
+          schedule_type: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credentials_used?: boolean | null
+          id?: string
+          log_file?: string | null
+          report_url?: string | null
+          scan_profile?: string | null
+          scan_target?: string | null
+          scanner_type?: string | null
+          schedule_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credentials_used?: boolean | null
+          id?: string
+          log_file?: string | null
+          report_url?: string | null
+          scan_profile?: string | null
+          scan_target?: string | null
+          scanner_type?: string | null
+          schedule_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vulnerabilities: {
+        Row: {
+          asset: string | null
+          canvas: boolean | null
+          core: boolean | null
+          created_at: string | null
+          cve: string[] | null
+          cvss_v2_base_score: number | null
+          cvss_v3_base_score: number | null
+          cvss_v4_base_score: number | null
+          cvss_v4_base_threat_score: number | null
+          description: string | null
+          discovered_at: string | null
+          external_id: string
+          id: string
+          impact: string | null
+          metasploit: boolean | null
+          name: string | null
+          plugin_id: string | null
+          plugin_output: string | null
+          port: number | null
+          protocol: string | null
+          risk: string | null
+          severity: string | null
+          solution: string | null
+          status: string | null
+          synopsis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset?: string | null
+          canvas?: boolean | null
+          core?: boolean | null
+          created_at?: string | null
+          cve?: string[] | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          discovered_at?: string | null
+          external_id: string
+          id?: string
+          impact?: string | null
+          metasploit?: boolean | null
+          name?: string | null
+          plugin_id?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          severity?: string | null
+          solution?: string | null
+          status?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset?: string | null
+          canvas?: boolean | null
+          core?: boolean | null
+          created_at?: string | null
+          cve?: string[] | null
+          cvss_v2_base_score?: number | null
+          cvss_v3_base_score?: number | null
+          cvss_v4_base_score?: number | null
+          cvss_v4_base_threat_score?: number | null
+          description?: string | null
+          discovered_at?: string | null
+          external_id?: string
+          id?: string
+          impact?: string | null
+          metasploit?: boolean | null
+          name?: string | null
+          plugin_id?: string | null
+          plugin_output?: string | null
+          port?: number | null
+          protocol?: string | null
+          risk?: string | null
+          severity?: string | null
+          solution?: string | null
+          status?: string | null
+          synopsis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vulnerability_repository: {
+        Row: {
+          assigned_to: string | null
+          comments: string | null
+          created_at: string | null
+          cve_id: string | null
+          cvss_score: number | null
+          cvss_vector: string | null
+          description: string | null
+          discovery_date: string | null
+          evidence: string[] | null
+          exploit_available: boolean | null
+          id: string
+          internal_id: string | null
+          known_exploited: boolean | null
+          patch_available: boolean | null
+          remediation: string | null
+          remediation_eta: string | null
+          sla_breach: boolean | null
+          source: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          comments?: string | null
+          created_at?: string | null
+          cve_id?: string | null
+          cvss_score?: number | null
+          cvss_vector?: string | null
+          description?: string | null
+          discovery_date?: string | null
+          evidence?: string[] | null
+          exploit_available?: boolean | null
+          id?: string
+          internal_id?: string | null
+          known_exploited?: boolean | null
+          patch_available?: boolean | null
+          remediation?: string | null
+          remediation_eta?: string | null
+          sla_breach?: boolean | null
+          source?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          comments?: string | null
+          created_at?: string | null
+          cve_id?: string | null
+          cvss_score?: number | null
+          cvss_vector?: string | null
+          description?: string | null
+          discovery_date?: string | null
+          evidence?: string[] | null
+          exploit_available?: boolean | null
+          id?: string
+          internal_id?: string | null
+          known_exploited?: boolean | null
+          patch_available?: boolean | null
+          remediation?: string | null
+          remediation_eta?: string | null
+          sla_breach?: boolean | null
+          source?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DefaultSchema = Database[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
