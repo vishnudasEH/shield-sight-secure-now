@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server } from "lucide-react";
+import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VulnerabilityDashboard } from "@/components/VulnerabilityDashboard";
@@ -10,6 +10,7 @@ import { ReportsSection } from "@/components/ReportsSection";
 import { TeamManagement } from "@/components/TeamManagement";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { AssetsPage } from "@/components/AssetsPage";
+import { RiskManagement } from "@/components/RiskManagement";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -28,7 +29,7 @@ const Index = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7 bg-slate-800 border-slate-700">
+          <TabsList className="grid w-full grid-cols-8 bg-slate-800 border-slate-700">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Dashboard
@@ -44,6 +45,10 @@ const Index = () => {
             <TabsTrigger value="assets" className="flex items-center gap-2">
               <Server className="h-4 w-4" />
               Assets
+            </TabsTrigger>
+            <TabsTrigger value="risk" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Risk Management
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -73,6 +78,10 @@ const Index = () => {
 
           <TabsContent value="assets" className="mt-6">
             <AssetsPage />
+          </TabsContent>
+
+          <TabsContent value="risk" className="mt-6">
+            <RiskManagement />
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,28 +42,58 @@ export const FileUpload = () => {
     setUploadProgress(0);
 
     try {
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `uploads/${fileName}`;
+      setUploadProgress(25);
 
-      const { error: uploadError } = await supabase.storage
-        .from('nessus-files')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
+      // Parse CSV and count vulnerabilities first
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      const vulnerabilityCount = Math.max(0, lines.length - 1); // Subtract header
 
       setUploadProgress(50);
 
-      // Parse CSV and count vulnerabilities
-      const text = await file.text();
-      const lines = text.split('\n');
-      const vulnerabilityCount = Math.max(0, lines.length - 2); // Subtract header and potential empty line
+      // Parse CSV data and insert into nessus_csv table
+      const headers = lines[0].split('\t').map(h => h.trim());
+      const dataRows = lines.slice(1);
+
+      const vulnerabilities = dataRows.map(row => {
+        const values = row.split('\t');
+        return {
+          plugin_id: values[0] || null,
+          external_id: values[1] || null,
+          cvss_v2_base_score: values[2] ? parseFloat(values[2]) : null,
+          severity: values[3] || null,
+          asset: values[4] || null,
+          protocol: values[5] || null,
+          port: values[6] ? parseInt(values[6]) : null,
+          name: values[7] || null,
+          synopsis: values[8] || null,
+          description: values[9] || null,
+          solution: values[10] || null,
+          see_also: values[11] || null,
+          plugin_output: values[12] || null,
+          cvss_v4_base_score: values[13] ? parseFloat(values[13]) : null,
+          cvss_v4_base_threat_score: values[14] ? parseFloat(values[14]) : null,
+          cvss_v3_base_score: values[15] ? parseFloat(values[15]) : null,
+          metasploit: values[16] === 'TRUE',
+          core_impact: values[17] === 'TRUE',
+          canvas: values[18] === 'TRUE'
+        };
+      });
 
       setUploadProgress(75);
 
-      // Save metadata to database
-      const { error: dbError } = await supabase
+      // Insert vulnerabilities into database
+      const { error: vulnError } = await supabase
+        .from('nessus_csv')
+        .insert(vulnerabilities);
+
+      if (vulnError) {
+        console.error('Error inserting vulnerabilities:', vulnError);
+        throw vulnError;
+      }
+
+      // Save metadata to uploads table
+      const { error: uploadError } = await supabase
         .from('nessus_uploads')
         .insert({
           filename: file.name,
@@ -72,7 +102,10 @@ export const FileUpload = () => {
           processed: true
         });
 
-      if (dbError) throw dbError;
+      if (uploadError) {
+        console.error('Error saving upload metadata:', uploadError);
+        throw uploadError;
+      }
 
       setUploadProgress(100);
 
@@ -88,7 +121,7 @@ export const FileUpload = () => {
       console.error('Upload error:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload file. Please try again.",
+        description: `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
@@ -100,24 +133,28 @@ export const FileUpload = () => {
   };
 
   const fetchRecentUploads = async () => {
-    const { data, error } = await supabase
-      .from('nessus_uploads')
-      .select('*')
-      .order('upload_date', { ascending: false })
-      .limit(5);
+    try {
+      const { data, error } = await supabase
+        .from('nessus_uploads')
+        .select('*')
+        .order('upload_date', { ascending: false })
+        .limit(5);
 
-    if (error) {
-      console.error('Error fetching uploads:', error);
-      return;
+      if (error) {
+        console.error('Error fetching uploads:', error);
+        return;
+      }
+
+      setRecentUploads(data || []);
+    } catch (error) {
+      console.error('Error in fetchRecentUploads:', error);
     }
-
-    setRecentUploads(data || []);
   };
 
   // Fetch recent uploads on component mount
-  useState(() => {
+  useEffect(() => {
     fetchRecentUploads();
-  });
+  }, []);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -167,7 +204,7 @@ export const FileUpload = () => {
 
           <div className="text-sm text-slate-400">
             <p>Supported format: Nessus CSV export files</p>
-            <p>Expected columns: Plugin ID, CVSS scores, severity, asset details, etc.</p>
+            <p>Expected columns: Plugin ID, CVE, CVSS scores, severity, asset details, etc.</p>
           </div>
         </CardContent>
       </Card>
