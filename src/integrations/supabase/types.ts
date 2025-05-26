@@ -426,6 +426,39 @@ export type Database = {
         }
         Relationships: []
       }
+      nessus_uploads: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          filename: string
+          id: string
+          processed: boolean | null
+          total_vulnerabilities: number | null
+          updated_at: string
+          upload_date: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          filename: string
+          id?: string
+          processed?: boolean | null
+          total_vulnerabilities?: number | null
+          updated_at?: string
+          upload_date?: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          filename?: string
+          id?: string
+          processed?: boolean | null
+          total_vulnerabilities?: number | null
+          updated_at?: string
+          upload_date?: string
+        }
+        Relationships: []
+      }
       remediation_tickets: {
         Row: {
           asset_id: string | null
