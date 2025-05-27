@@ -279,6 +279,59 @@ export type Database = {
         }
         Relationships: []
       }
+      nessus_assets: {
+        Row: {
+          created_at: string
+          fqdn: string | null
+          host_name: string
+          id: string
+          ip_address: string | null
+          mac_address: string | null
+          netbios_name: string | null
+          operating_system: string | null
+          risk_score: number | null
+          updated_at: string
+          upload_session_id: string
+          vulnerability_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          fqdn?: string | null
+          host_name: string
+          id?: string
+          ip_address?: string | null
+          mac_address?: string | null
+          netbios_name?: string | null
+          operating_system?: string | null
+          risk_score?: number | null
+          updated_at?: string
+          upload_session_id: string
+          vulnerability_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          fqdn?: string | null
+          host_name?: string
+          id?: string
+          ip_address?: string | null
+          mac_address?: string | null
+          netbios_name?: string | null
+          operating_system?: string | null
+          risk_score?: number | null
+          updated_at?: string
+          upload_session_id?: string
+          vulnerability_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_nessus_assets_session"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "nessus_upload_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nessus_csv: {
         Row: {
           asset: string | null
@@ -426,6 +479,39 @@ export type Database = {
         }
         Relationships: []
       }
+      nessus_upload_sessions: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          scan_end_time: string | null
+          scan_start_time: string | null
+          total_assets: number | null
+          total_vulnerabilities: number | null
+          upload_date: string
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          scan_end_time?: string | null
+          scan_start_time?: string | null
+          total_assets?: number | null
+          total_vulnerabilities?: number | null
+          upload_date?: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          scan_end_time?: string | null
+          scan_start_time?: string | null
+          total_assets?: number | null
+          total_vulnerabilities?: number | null
+          upload_date?: string
+        }
+        Relationships: []
+      }
       nessus_uploads: {
         Row: {
           created_at: string
@@ -458,6 +544,68 @@ export type Database = {
           upload_date?: string
         }
         Relationships: []
+      }
+      nessus_vulnerabilities: {
+        Row: {
+          created_at: string
+          cve: string[] | null
+          cvss_score: string | null
+          description: string | null
+          host: string
+          id: string
+          plugin_id: string
+          plugin_name: string
+          port: string | null
+          protocol: string | null
+          severity: string
+          solution: string | null
+          synopsis: string | null
+          updated_at: string
+          upload_session_id: string
+        }
+        Insert: {
+          created_at?: string
+          cve?: string[] | null
+          cvss_score?: string | null
+          description?: string | null
+          host: string
+          id?: string
+          plugin_id: string
+          plugin_name: string
+          port?: string | null
+          protocol?: string | null
+          severity: string
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string
+          upload_session_id: string
+        }
+        Update: {
+          created_at?: string
+          cve?: string[] | null
+          cvss_score?: string | null
+          description?: string | null
+          host?: string
+          id?: string
+          plugin_id?: string
+          plugin_name?: string
+          port?: string | null
+          protocol?: string | null
+          severity?: string
+          solution?: string | null
+          synopsis?: string | null
+          updated_at?: string
+          upload_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_nessus_vulnerabilities_session"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "nessus_upload_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       remediation_tickets: {
         Row: {

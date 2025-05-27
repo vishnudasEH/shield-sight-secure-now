@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Upload, FileText, AlertTriangle, CheckCircle, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -16,38 +16,71 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface NessusVulnerability {
-  pluginId: string;
-  pluginName: string;
-  severity: string;
-  host: string;
-  port: string;
-  protocol: string;
-  description: string;
-  solution: string;
-  synopsis: string;
-  cvssScore: string;
-  cve: string[];
-}
+import { nessusService, NessusVulnerability, NessusAsset } from "@/services/nessusService";
 
 export const NessusFileUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [vulnerabilities, setVulnerabilities] = useState<NessusVulnerability[]>([]);
   const [fileName, setFileName] = useState("");
+  const [uploadedToDb, setUploadedToDb] = useState(false);
   const { toast } = useToast();
 
-  const parseNessusXML = (xmlContent: string): NessusVulnerability[] => {
+  const parseNessusXML = (xmlContent: string): { vulnerabilities: NessusVulnerability[], assets: NessusAsset[] } => {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
     
     const reportHosts = xmlDoc.querySelectorAll("ReportHost");
     const vulnerabilities: NessusVulnerability[] = [];
+    const assetsMap = new Map<string, NessusAsset>();
 
     reportHosts.forEach(host => {
       const hostName = host.getAttribute("name") || "Unknown";
       const reportItems = host.querySelectorAll("ReportItem");
+
+      // Extract host properties for asset creation
+      const hostProperties = host.querySelectorAll("HostProperties tag");
+      let ipAddress = "";
+      let operatingSystem = "";
+      let macAddress = "";
+      let netbiosName = "";
+      let fqdn = "";
+
+      hostProperties.forEach(prop => {
+        const name = prop.getAttribute("name");
+        const value = prop.textContent || "";
+        
+        switch (name) {
+          case "host-ip":
+            ipAddress = value;
+            break;
+          case "operating-system":
+            operatingSystem = value;
+            break;
+          case "mac-address":
+            macAddress = value;
+            break;
+          case "netbios-name":
+            netbiosName = value;
+            break;
+          case "host-fqdn":
+            fqdn = value;
+            break;
+        }
+      });
+
+      // Create or update asset
+      if (!assetsMap.has(hostName)) {
+        assetsMap.set(hostName, {
+          hostName,
+          ipAddress,
+          operatingSystem,
+          macAddress,
+          netbiosName,
+          fqdn,
+          vulnerabilityCount: 0
+        });
+      }
 
       reportItems.forEach(item => {
         const pluginId = item.getAttribute("pluginID") || "";
@@ -85,10 +118,16 @@ export const NessusFileUpload = () => {
           cvssScore: cvssBaseScore,
           cve: cves
         });
+
+        // Increment vulnerability count for asset
+        const asset = assetsMap.get(hostName);
+        if (asset) {
+          asset.vulnerabilityCount++;
+        }
       });
     });
 
-    return vulnerabilities;
+    return { vulnerabilities, assets: Array.from(assetsMap.values()) };
   };
 
   const getSeverityText = (severity: string): string => {
@@ -129,6 +168,7 @@ export const NessusFileUpload = () => {
     setUploading(true);
     setUploadProgress(0);
     setFileName(file.name);
+    setUploadedToDb(false);
 
     try {
       setUploadProgress(25);
@@ -138,15 +178,41 @@ export const NessusFileUpload = () => {
       setUploadProgress(50);
 
       // Parse XML content
-      const parsedVulnerabilities = parseNessusXML(text);
+      const { vulnerabilities: parsedVulns, assets } = parseNessusXML(text);
       setUploadProgress(75);
 
-      setVulnerabilities(parsedVulnerabilities);
+      // Save to database
+      try {
+        console.log('Creating upload session...');
+        const session = await nessusService.createUploadSession(
+          file.name,
+          parsedVulns.length,
+          assets.length
+        );
+
+        console.log('Saving vulnerabilities...');
+        await nessusService.saveVulnerabilities(session.id, parsedVulns);
+        
+        console.log('Saving assets...');
+        await nessusService.saveAssets(session.id, assets);
+
+        setUploadedToDb(true);
+        console.log('Data saved successfully to database');
+      } catch (dbError) {
+        console.error('Database save error:', dbError);
+        toast({
+          title: "Database Save Failed",
+          description: "Data was parsed but couldn't be saved to database. Please check the console for details.",
+          variant: "destructive",
+        });
+      }
+
+      setVulnerabilities(parsedVulns);
       setUploadProgress(100);
 
       toast({
         title: "Upload Successful",
-        description: `${file.name} uploaded and parsed successfully. Found ${parsedVulnerabilities.length} vulnerabilities.`,
+        description: `${file.name} uploaded and parsed successfully. Found ${parsedVulns.length} vulnerabilities and ${assets.length} assets.`,
       });
 
     } catch (error) {
@@ -164,14 +230,6 @@ export const NessusFileUpload = () => {
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <div className="space-y-6">
       {/* Upload Section */}
@@ -182,7 +240,7 @@ export const NessusFileUpload = () => {
             Upload Nessus XML File
           </CardTitle>
           <CardDescription className="text-slate-400">
-            Upload a .nessus XML file to parse and display vulnerability scan results
+            Upload a .nessus XML file to parse and store vulnerability scan results in the database
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -210,9 +268,16 @@ export const NessusFileUpload = () => {
             </div>
           )}
 
+          {uploadedToDb && (
+            <div className="flex items-center gap-2 text-green-400 text-sm">
+              <Database className="h-4 w-4" />
+              <span>Data successfully saved to database</span>
+            </div>
+          )}
+
           <div className="text-sm text-slate-400">
             <p>Supported format: Nessus XML (.nessus) export files</p>
-            <p>The file will be parsed to extract vulnerability information and display it below.</p>
+            <p>The file will be parsed and stored in the database for use across the application.</p>
           </div>
         </CardContent>
       </Card>
@@ -224,6 +289,9 @@ export const NessusFileUpload = () => {
             <CardTitle className="text-white">Parsed Vulnerabilities</CardTitle>
             <CardDescription className="text-slate-400">
               {vulnerabilities.length} vulnerabilities found in {fileName}
+              {uploadedToDb && (
+                <span className="ml-2 text-green-400">• Saved to database</span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -293,8 +361,9 @@ export const NessusFileUpload = () => {
                 Showing first 50 of {vulnerabilities.length} vulnerabilities
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
       )}
     </div>
   );
