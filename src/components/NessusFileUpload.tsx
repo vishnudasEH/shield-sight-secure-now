@@ -361,9 +361,8 @@ export const NessusFileUpload = () => {
                 Showing first 50 of {vulnerabilities.length} vulnerabilities
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
