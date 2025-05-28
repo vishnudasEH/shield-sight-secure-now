@@ -3,9 +3,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Download, FileText, TrendingUp, Share, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Download, FileText, TrendingUp, Share, Eye, AlertCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { reportService, reportTemplates, ReportData } from "@/services/reportService";
 
 interface VulnerabilityMetrics {
   total: number;
@@ -23,7 +27,12 @@ export const ReportsSection = () => {
     medium: 0,
     low: 0
   });
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState("");
+  const [customReportName, setCustomReportName] = useState("");
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchReportData();
@@ -31,37 +40,70 @@ export const ReportsSection = () => {
 
   const fetchReportData = async () => {
     try {
-      const { data: vulnerabilities, error } = await supabase
-        .from('nessus_vulnerabilities')
-        .select('severity');
-
-      if (error) throw error;
-
-      const severityCounts = {
-        Critical: 0,
-        High: 0,
-        Medium: 0,
-        Low: 0,
-      };
-
-      vulnerabilities?.forEach(vuln => {
-        if (severityCounts.hasOwnProperty(vuln.severity)) {
-          severityCounts[vuln.severity as keyof typeof severityCounts]++;
-        }
-      });
-
+      const data = await reportService.fetchReportData();
+      setReportData(data);
+      
       setMetrics({
-        total: vulnerabilities?.length || 0,
-        critical: severityCounts.Critical,
-        high: severityCounts.High,
-        medium: severityCounts.Medium,
-        low: severityCounts.Low
+        total: data.totalVulnerabilities,
+        critical: data.severityCounts.Critical,
+        high: data.severityCounts.High,
+        medium: data.severityCounts.Medium,
+        low: data.severityCounts.Low
       });
     } catch (error) {
       console.error('Error fetching report data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!selectedReportType || !reportData) return;
+    
+    setGeneratingReport(true);
+    try {
+      const template = reportTemplates.find(t => t.type === selectedReportType);
+      const reportName = customReportName || template?.name || 'Security Report';
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `${reportName.replace(/\s+/g, '_')}_${timestamp}`;
+      
+      const csvContent = reportService.generateCSVReport(reportData, selectedReportType, reportName);
+      reportService.downloadCSV(csvContent, filename);
+      
+      setIsGenerateDialogOpen(false);
+      setSelectedReportType("");
+      setCustomReportName("");
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const handleViewReport = (reportType: string) => {
+    if (!reportData) return;
+    
+    const template = reportTemplates.find(t => t.type === reportType);
+    const reportName = template?.name || 'Security Report';
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `${reportName.replace(/\s+/g, '_')}_${timestamp}_preview`;
+    
+    const csvContent = reportService.generateCSVReport(reportData, reportType, reportName);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
+
+  const handleDownloadReport = (reportType: string) => {
+    if (!reportData) return;
+    
+    const template = reportTemplates.find(t => t.type === reportType);
+    const reportName = template?.name || 'Security Report';
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `${reportName.replace(/\s+/g, '_')}_${timestamp}`;
+    
+    const csvContent = reportService.generateCSVReport(reportData, reportType, reportName);
+    reportService.downloadCSV(csvContent, filename);
   };
 
   const reportData = [
@@ -79,7 +121,7 @@ export const ReportsSection = () => {
     {
       id: 1,
       name: `Security Assessment Report - ${new Date().toLocaleDateString()}`,
-      type: "Executive Summary",
+      type: "executive",
       generated: new Date().toISOString().split('T')[0],
       status: "Ready",
       size: "2.4 MB",
@@ -88,7 +130,7 @@ export const ReportsSection = () => {
     {
       id: 2,
       name: "Critical Vulnerabilities Report",
-      type: "Technical Report",
+      type: "technical",
       generated: new Date().toISOString().split('T')[0],
       status: "Ready",
       size: "1.2 MB",
@@ -97,11 +139,20 @@ export const ReportsSection = () => {
     {
       id: 3,
       name: "Asset Vulnerability Matrix",
-      type: "Compliance Report",
+      type: "asset-matrix",
       generated: new Date().toISOString().split('T')[0],
       status: "Ready",
       size: "1.8 MB",
       vulnerabilities: metrics.high + metrics.medium,
+    },
+    {
+      id: 4,
+      name: "Compliance Assessment Report",
+      type: "compliance",
+      generated: new Date().toISOString().split('T')[0],
+      status: "Ready",
+      size: "0.9 MB",
+      vulnerabilities: metrics.total,
     },
   ];
 
@@ -180,30 +231,99 @@ export const ReportsSection = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { type: "Executive Summary", description: "High-level overview with current metrics", icon: TrendingUp },
-                  { type: "Technical Report", description: "Detailed vulnerability findings", icon: FileText },
-                  { type: "Compliance Report", description: "Regulatory compliance assessment", icon: Calendar },
-                  { type: "Asset Risk Matrix", description: "Asset-based vulnerability mapping", icon: Share },
-                ].map((reportType) => (
+                {reportTemplates.map((template) => (
                   <div
-                    key={reportType.type}
+                    key={template.id}
                     className="p-4 rounded-lg border border-slate-600 bg-slate-700/50 hover:border-slate-500 cursor-pointer transition-colors"
+                    onClick={() => {
+                      setSelectedReportType(template.type);
+                      setCustomReportName(template.name);
+                      setIsGenerateDialogOpen(true);
+                    }}
                   >
                     <div className="flex items-center gap-3 mb-2">
-                      <reportType.icon className="h-5 w-5 text-blue-400" />
-                      <h3 className="text-slate-300 font-medium">{reportType.type}</h3>
+                      <FileText className="h-5 w-5 text-blue-400" />
+                      <h3 className="text-slate-300 font-medium">{template.name}</h3>
                     </div>
-                    <p className="text-slate-400 text-sm">{reportType.description}</p>
+                    <p className="text-slate-400 text-sm">{template.description}</p>
                   </div>
                 ))}
               </div>
               
               <div className="pt-4 border-t border-slate-700">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generate Report
-                </Button>
+                <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Custom Report
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slate-800 border-slate-700">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Generate Security Report</DialogTitle>
+                      <DialogDescription className="text-slate-400">
+                        Customize your report settings and generate a comprehensive security assessment
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Report Type</label>
+                        <Select value={selectedReportType} onValueChange={setSelectedReportType}>
+                          <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                            <SelectValue placeholder="Select report type" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-700 border-slate-600">
+                            {reportTemplates.map((template) => (
+                              <SelectItem key={template.id} value={template.type}>
+                                {template.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Report Name</label>
+                        <Input
+                          value={customReportName}
+                          onChange={(e) => setCustomReportName(e.target.value)}
+                          placeholder="Enter custom report name"
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
+                      </div>
+                      
+                      {selectedReportType && (
+                        <div className="p-3 bg-slate-700/50 rounded-lg">
+                          <h4 className="text-sm font-medium text-slate-300 mb-2">Report Preview</h4>
+                          <p className="text-sm text-slate-400">
+                            {reportTemplates.find(t => t.type === selectedReportType)?.description}
+                          </p>
+                          <div className="mt-2 text-xs text-slate-500">
+                            Will include: {metrics.total} vulnerabilities, {reportData?.assets.length || 0} assets
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          onClick={handleGenerateReport}
+                          disabled={!selectedReportType || generatingReport}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {generatingReport ? 'Generating...' : 'Generate & Download'}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsGenerateDialogOpen(false)}
+                          className="border-slate-600"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -219,7 +339,7 @@ export const ReportsSection = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Total Assets Scanned</span>
-                  <span className="text-white font-semibold">247</span>
+                  <span className="text-white font-semibold">{reportData?.assets.length || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Scan Coverage</span>
@@ -227,7 +347,9 @@ export const ReportsSection = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Critical/High Ratio</span>
-                  <span className="text-white font-semibold">{Math.round((metrics.critical + metrics.high) / metrics.total * 100)}%</span>
+                  <span className="text-white font-semibold">
+                    {metrics.total > 0 ? Math.round((metrics.critical + metrics.high) / metrics.total * 100) : 0}%
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Last Scan</span>
@@ -269,7 +391,7 @@ export const ReportsSection = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Reports */}
+      {/* Available Reports */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Available Reports</CardTitle>
@@ -284,11 +406,9 @@ export const ReportsSection = () => {
                 <div className="flex-1">
                   <h3 className="text-slate-300 font-medium mb-1">{report.name}</h3>
                   <div className="flex items-center gap-4 text-sm text-slate-400">
-                    <span>{report.type}</span>
+                    <span>{reportTemplates.find(t => t.type === report.type)?.name || report.type}</span>
                     <span>•</span>
                     <span>{report.generated}</span>
-                    <span>•</span>
-                    <span>{report.size}</span>
                     <span>•</span>
                     <span>{report.vulnerabilities} vulnerabilities</span>
                   </div>
@@ -303,10 +423,20 @@ export const ReportsSection = () => {
                   </Badge>
                   
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="border-slate-600">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-slate-600"
+                      onClick={() => handleViewReport(report.type)}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" className="border-slate-600">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-slate-600"
+                      onClick={() => handleDownloadReport(report.type)}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" size="sm" className="border-slate-600">

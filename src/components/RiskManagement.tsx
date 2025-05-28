@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +6,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Shield, 
   TrendingUp, 
@@ -16,10 +18,13 @@ import {
   BarChart3,
   Search,
   Download,
-  Eye
+  Eye,
+  Plus,
+  Edit
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useForm } from "react-hook-form";
 
 interface RiskMetric {
   name: string;
@@ -28,12 +33,60 @@ interface RiskMetric {
   trend: number;
 }
 
+interface RiskAssessment {
+  id: string;
+  asset: string;
+  riskScore: number;
+  status: string;
+  lastAssessed: string;
+  assessor: string;
+  category: string;
+  vulnerabilities: number;
+  criticalCount: number;
+  highCount: number;
+}
+
+interface MitigationPlan {
+  id: string;
+  title: string;
+  priority: string;
+  status: string;
+  dueDate: string;
+  assignedTo: string;
+  progress: number;
+  vulnerabilityCount: number;
+  description: string;
+}
+
 export const RiskManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [riskMetrics, setRiskMetrics] = useState<RiskMetric[]>([]);
+  const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
+  const [mitigationPlans, setMitigationPlans] = useState<MitigationPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
+  const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
+
+  const assessmentForm = useForm({
+    defaultValues: {
+      asset: "",
+      category: "",
+      assessor: "",
+      notes: ""
+    }
+  });
+
+  const planForm = useForm({
+    defaultValues: {
+      title: "",
+      priority: "Medium",
+      assignedTo: "",
+      dueDate: "",
+      description: ""
+    }
+  });
 
   useEffect(() => {
     fetchRiskData();
@@ -44,9 +97,16 @@ export const RiskManagement = () => {
       // Fetch vulnerability counts by severity
       const { data: vulnerabilities, error: vulnError } = await supabase
         .from('nessus_vulnerabilities')
-        .select('severity');
+        .select('severity, host');
 
       if (vulnError) throw vulnError;
+
+      // Fetch assets
+      const { data: assets, error: assetsError } = await supabase
+        .from('nessus_assets')
+        .select('*');
+
+      if (assetsError) throw assetsError;
 
       // Count vulnerabilities by severity
       const severityCounts = {
@@ -70,6 +130,72 @@ export const RiskManagement = () => {
       ];
 
       setRiskMetrics(metrics);
+
+      // Generate risk assessments based on real data
+      const assessments: RiskAssessment[] = assets?.map((asset, index) => {
+        const assetVulns = vulnerabilities?.filter(v => 
+          v.host === asset.ip_address || v.host === asset.host_name
+        ) || [];
+        
+        const criticalCount = assetVulns.filter(v => v.severity === 'Critical').length;
+        const highCount = assetVulns.filter(v => v.severity === 'High').length;
+        const riskScore = Math.min(10, (criticalCount * 2 + highCount * 1.5 + assetVulns.length * 0.1));
+        
+        return {
+          id: `RA-${String(index + 1).padStart(3, '0')}`,
+          asset: asset.host_name || asset.ip_address || `Asset ${index + 1}`,
+          riskScore: Number(riskScore.toFixed(1)),
+          status: riskScore >= 8 ? "Review" : riskScore >= 6 ? "Active" : "Completed",
+          lastAssessed: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          assessor: "Security Team",
+          category: asset.operating_system?.includes('Windows') ? "Infrastructure" : 
+                   asset.operating_system?.includes('Linux') ? "Infrastructure" : "Network",
+          vulnerabilities: assetVulns.length,
+          criticalCount,
+          highCount
+        };
+      }) || [];
+
+      setRiskAssessments(assessments);
+
+      // Generate mitigation plans based on critical vulnerabilities
+      const plans: MitigationPlan[] = [
+        {
+          id: "MP-001",
+          title: "Critical Vulnerability Remediation",
+          priority: "Critical",
+          status: "In Progress",
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          assignedTo: "Security Team",
+          progress: 65,
+          vulnerabilityCount: severityCounts.Critical,
+          description: "Address all critical severity vulnerabilities identified in the latest scan"
+        },
+        {
+          id: "MP-002",
+          title: "High Risk Asset Hardening",
+          priority: "High",
+          status: "Planning",
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          assignedTo: "Infrastructure Team",
+          progress: 25,
+          vulnerabilityCount: severityCounts.High,
+          description: "Implement security hardening measures for high-risk assets"
+        },
+        {
+          id: "MP-003",
+          title: "Patch Management Process",
+          priority: "Medium",
+          status: "Completed",
+          dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          assignedTo: "IT Operations",
+          progress: 100,
+          vulnerabilityCount: severityCounts.Medium + severityCounts.Low,
+          description: "Establish automated patch management for medium and low severity vulnerabilities"
+        }
+      ];
+
+      setMitigationPlans(plans);
     } catch (error) {
       console.error('Error fetching risk data:', error);
     } finally {
@@ -77,65 +203,59 @@ export const RiskManagement = () => {
     }
   };
 
-  const riskAssessments = [
-    {
-      id: "RA-001",
-      asset: "Web Server Cluster",
-      riskScore: 8.5,
+  const createRiskAssessment = async (data: any) => {
+    const newAssessment: RiskAssessment = {
+      id: `RA-${String(riskAssessments.length + 1).padStart(3, '0')}`,
+      asset: data.asset,
+      riskScore: Math.random() * 10, // In real implementation, calculate based on vulnerabilities
       status: "Active",
-      lastAssessed: "2024-01-15",
-      assessor: "Security Team",
-      category: "Infrastructure"
-    },
-    {
-      id: "RA-002",
-      asset: "Database Servers",
-      riskScore: 9.2,
-      status: "Review",
-      lastAssessed: "2024-01-14",
-      assessor: "Security Team",
-      category: "Data"
-    },
-    {
-      id: "RA-003",
-      asset: "Network Firewalls",
-      riskScore: 6.8,
-      status: "Completed",
-      lastAssessed: "2024-01-13",
-      assessor: "Security Team",
-      category: "Network"
-    }
-  ];
+      lastAssessed: new Date().toISOString().split('T')[0],
+      assessor: data.assessor,
+      category: data.category,
+      vulnerabilities: 0,
+      criticalCount: 0,
+      highCount: 0
+    };
 
-  const mitigationPlans = [
-    {
-      id: "MP-001",
-      title: "Critical Vulnerability Remediation",
-      priority: "Critical",
-      status: "In Progress",
-      dueDate: "2024-02-01",
-      assignedTo: "Security Team",
-      progress: 65
-    },
-    {
-      id: "MP-002",
-      title: "Network Segmentation Implementation",
-      priority: "High",
+    setRiskAssessments(prev => [newAssessment, ...prev]);
+    setIsAssessmentDialogOpen(false);
+    assessmentForm.reset();
+  };
+
+  const createMitigationPlan = async (data: any) => {
+    const newPlan: MitigationPlan = {
+      id: `MP-${String(mitigationPlans.length + 1).padStart(3, '0')}`,
+      title: data.title,
+      priority: data.priority,
       status: "Planning",
-      dueDate: "2024-02-15",
-      assignedTo: "Network Team",
-      progress: 25
-    },
-    {
-      id: "MP-003",
-      title: "Access Control Review",
-      priority: "Medium",
-      status: "Completed",
-      dueDate: "2024-01-30",
-      assignedTo: "IAM Team",
-      progress: 100
-    }
-  ];
+      dueDate: data.dueDate,
+      assignedTo: data.assignedTo,
+      progress: 0,
+      vulnerabilityCount: 0,
+      description: data.description
+    };
+
+    setMitigationPlans(prev => [newPlan, ...prev]);
+    setIsPlanDialogOpen(false);
+    planForm.reset();
+  };
+
+  const updateProgress = async (planId: string, newProgress: number) => {
+    setMitigationPlans(prev => 
+      prev.map(plan => 
+        plan.id === planId 
+          ? { ...plan, progress: newProgress, status: newProgress === 100 ? "Completed" : "In Progress" }
+          : plan
+      )
+    );
+  };
+
+  const filteredAssessments = riskAssessments.filter(assessment => {
+    const matchesSearch = assessment.asset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         assessment.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === "all" || assessment.status.toLowerCase() === filterStatus.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
 
   const getRiskColor = (score: number) => {
     if (score >= 9) return "text-red-400";
@@ -299,10 +419,92 @@ export const RiskManagement = () => {
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
+            <Dialog open={isAssessmentDialogOpen} onOpenChange={setIsAssessmentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Assessment
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 border-slate-700">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Create Risk Assessment</DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    Create a new risk assessment for an asset or system
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...assessmentForm}>
+                  <form onSubmit={assessmentForm.handleSubmit(createRiskAssessment)} className="space-y-4">
+                    <FormField
+                      control={assessmentForm.control}
+                      name="asset"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Asset Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={assessmentForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Category</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-slate-700 border-slate-600">
+                              <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                              <SelectItem value="Network">Network</SelectItem>
+                              <SelectItem value="Application">Application</SelectItem>
+                              <SelectItem value="Data">Data</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={assessmentForm.control}
+                      name="assessor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Assessor</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Create Assessment
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsAssessmentDialogOpen(false)}
+                        className="border-slate-600"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="grid gap-4">
-            {riskAssessments.map((assessment) => (
+            {filteredAssessments.map((assessment) => (
               <Card key={assessment.id} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -313,7 +515,7 @@ export const RiskManagement = () => {
                           {assessment.id}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
                           <span className="text-slate-400">Risk Score:</span>
                           <span className={`ml-2 font-semibold ${getRiskColor(assessment.riskScore)}`}>
@@ -325,8 +527,12 @@ export const RiskManagement = () => {
                           <span className="ml-2 text-slate-300">{assessment.category}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Assessor:</span>
-                          <span className="ml-2 text-slate-300">{assessment.assessor}</span>
+                          <span className="text-slate-400">Vulnerabilities:</span>
+                          <span className="ml-2 text-slate-300">{assessment.vulnerabilities}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Critical:</span>
+                          <span className="ml-2 text-red-400">{assessment.criticalCount}</span>
                         </div>
                         <div>
                           <span className="text-slate-400">Last Assessed:</span>
@@ -350,6 +556,118 @@ export const RiskManagement = () => {
         </TabsContent>
 
         <TabsContent value="mitigation" className="mt-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Mitigation Plans</h3>
+            <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Plan
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 border-slate-700">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Create Mitigation Plan</DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    Create a new mitigation plan to address security risks
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...planForm}>
+                  <form onSubmit={planForm.handleSubmit(createMitigationPlan)} className="space-y-4">
+                    <FormField
+                      control={planForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Plan Title</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={planForm.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Priority</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-slate-700 border-slate-600">
+                              <SelectItem value="Low">Low</SelectItem>
+                              <SelectItem value="Medium">Medium</SelectItem>
+                              <SelectItem value="High">High</SelectItem>
+                              <SelectItem value="Critical">Critical</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={planForm.control}
+                      name="assignedTo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Assigned To</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={planForm.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Due Date</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="date" className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={planForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">Description</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                        Create Plan
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsPlanDialogOpen(false)}
+                        className="border-slate-600"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <div className="grid gap-4">
             {mitigationPlans.map((plan) => (
               <Card key={plan.id} className="bg-slate-800 border-slate-700">
@@ -357,7 +675,8 @@ export const RiskManagement = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-white">{plan.title}</h3>
-                      <p className="text-slate-400">Assigned to: {plan.assignedTo}</p>
+                      <p className="text-slate-400">{plan.description}</p>
+                      <p className="text-slate-400 text-sm">Assigned to: {plan.assignedTo}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={getPriorityColor(plan.priority)}>
@@ -374,11 +693,21 @@ export const RiskManagement = () => {
                       <span className="text-slate-300">{plan.progress}%</span>
                     </div>
                     <Progress value={plan.progress} className="h-2" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Due Date: {plan.dueDate}</span>
-                      <Button size="sm" variant="outline" className="border-slate-600">
-                        Update Progress
-                      </Button>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400">Due: {plan.dueDate} | Vulns: {plan.vulnerabilityCount}</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="border-slate-600"
+                          onClick={() => updateProgress(plan.id, Math.min(100, plan.progress + 25))}
+                        >
+                          Update Progress
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-slate-600">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
