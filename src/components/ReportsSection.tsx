@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,7 +105,7 @@ export const ReportsSection = () => {
     reportService.downloadCSV(csvContent, filename);
   };
 
-  const reportData = [
+  const chartData = [
     { month: "Current Scan", vulnerabilities: metrics.total, resolved: 0, critical: metrics.critical },
   ];
 
