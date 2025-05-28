@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Server, Globe, Shield, AlertTriangle, Filter } from "lucide-react";
+import { Search, Server, Globe, Shield, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePagination } from "@/hooks/usePagination";
+import { PaginationControls } from "./PaginationControls";
+import { AssetVulnerabilities } from "./AssetVulnerabilities";
 
 interface Asset {
   id: string;
@@ -26,7 +28,30 @@ export const AssetsPage = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+
+  const filteredAssets = assets.filter(asset => {
+    const matchesSearch = 
+      asset.host_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.netbios_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.fqdn?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
+  });
+
+  const {
+    currentData: currentAssets,
+    currentPage,
+    totalPages,
+    totalItems,
+    startIndex,
+    endIndex,
+    itemsPerPage,
+    goToPage,
+    hasNext,
+    hasPrev
+  } = usePagination({ data: filteredAssets, itemsPerPage: 100 });
 
   useEffect(() => {
     fetchAssets();
@@ -47,16 +72,6 @@ export const AssetsPage = () => {
       setLoading(false);
     }
   };
-
-  const filteredAssets = assets.filter(asset => {
-    const matchesSearch = 
-      asset.host_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.netbios_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.fqdn?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesSearch;
-  });
 
   const getRiskBadgeColor = (vulnCount: number) => {
     if (vulnCount >= 10) return "bg-red-500/20 text-red-400";
@@ -83,6 +98,19 @@ export const AssetsPage = () => {
     return <Shield className="h-4 w-4" />;
   };
 
+  const handleAssetClick = (assetHost: string) => {
+    setSelectedAsset(assetHost);
+  };
+
+  if (selectedAsset) {
+    return (
+      <AssetVulnerabilities 
+        assetHost={selectedAsset} 
+        onClose={() => setSelectedAsset(null)} 
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -104,36 +132,47 @@ export const AssetsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-slate-600 text-slate-300">
-            {filteredAssets.length} assets
+            {totalItems} assets
           </Badge>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search */}
       <Card className="bg-slate-800 border-slate-700">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Search assets by hostname, IP, or FQDN..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
-                />
-              </div>
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search assets by hostname, IP, or FQDN..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-slate-700 border-slate-600 text-white"
+            />
           </div>
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      {totalItems > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          itemsPerPage={itemsPerPage}
+          onPageChange={goToPage}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
+        />
+      )}
 
       {/* Assets Table */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Assets</CardTitle>
           <CardDescription className="text-slate-400">
-            Complete inventory of discovered assets from Nessus scans
+            Complete inventory of discovered assets from Nessus scans. Click on an asset to view its vulnerabilities.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,10 +193,11 @@ export const AssetsPage = () => {
                     <TableHead className="text-slate-300">Vulnerabilities</TableHead>
                     <TableHead className="text-slate-300">Risk Level</TableHead>
                     <TableHead className="text-slate-300">Last Scan</TableHead>
+                    <TableHead className="text-slate-300">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAssets.map((asset) => (
+                  {currentAssets.map((asset) => (
                     <TableRow key={asset.id} className="border-slate-700 hover:bg-slate-700/50">
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -192,6 +232,17 @@ export const AssetsPage = () => {
                       <TableCell className="text-slate-400">
                         {new Date(asset.created_at).toLocaleDateString()}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-slate-600"
+                          onClick={() => handleAssetClick(asset.host_name)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Vulnerabilities
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -200,6 +251,21 @@ export const AssetsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Bottom Pagination */}
+      {totalItems > itemsPerPage && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          itemsPerPage={itemsPerPage}
+          onPageChange={goToPage}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
+        />
+      )}
     </div>
   );
 };

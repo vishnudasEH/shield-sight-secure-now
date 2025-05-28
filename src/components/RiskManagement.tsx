@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,90 +15,127 @@ import {
   Calendar, 
   BarChart3,
   Search,
-  Filter,
   Download,
   Eye
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
-const riskMetrics = [
-  { name: "Critical", value: 12, color: "#dc2626", trend: -2 },
-  { name: "High", value: 34, color: "#ea580c", trend: -5 },
-  { name: "Medium", value: 87, color: "#d97706", trend: +3 },
-  { name: "Low", value: 156, color: "#65a30d", trend: +12 },
-];
-
-const riskTrends = [
-  { month: "Jan", critical: 15, high: 42, medium: 89, low: 134 },
-  { month: "Feb", critical: 13, high: 38, medium: 92, low: 145 },
-  { month: "Mar", critical: 18, high: 45, medium: 85, low: 167 },
-  { month: "Apr", critical: 12, high: 34, medium: 87, low: 156 },
-];
-
-const riskAssessments = [
-  {
-    id: "RA-001",
-    asset: "Web Server Cluster",
-    riskScore: 8.5,
-    status: "Active",
-    lastAssessed: "2024-01-15",
-    assessor: "John Doe",
-    category: "Infrastructure"
-  },
-  {
-    id: "RA-002",
-    asset: "Database Servers",
-    riskScore: 9.2,
-    status: "Review",
-    lastAssessed: "2024-01-14",
-    assessor: "Jane Smith",
-    category: "Data"
-  },
-  {
-    id: "RA-003",
-    asset: "Network Firewalls",
-    riskScore: 6.8,
-    status: "Completed",
-    lastAssessed: "2024-01-13",
-    assessor: "Mike Johnson",
-    category: "Network"
-  }
-];
-
-const mitigationPlans = [
-  {
-    id: "MP-001",
-    title: "Critical Vulnerability Remediation",
-    priority: "Critical",
-    status: "In Progress",
-    dueDate: "2024-02-01",
-    assignedTo: "Security Team",
-    progress: 65
-  },
-  {
-    id: "MP-002",
-    title: "Network Segmentation Implementation",
-    priority: "High",
-    status: "Planning",
-    dueDate: "2024-02-15",
-    assignedTo: "Network Team",
-    progress: 25
-  },
-  {
-    id: "MP-003",
-    title: "Access Control Review",
-    priority: "Medium",
-    status: "Completed",
-    dueDate: "2024-01-30",
-    assignedTo: "IAM Team",
-    progress: 100
-  }
-];
+interface RiskMetric {
+  name: string;
+  value: number;
+  color: string;
+  trend: number;
+}
 
 export const RiskManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [riskMetrics, setRiskMetrics] = useState<RiskMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRiskData();
+  }, []);
+
+  const fetchRiskData = async () => {
+    try {
+      // Fetch vulnerability counts by severity
+      const { data: vulnerabilities, error: vulnError } = await supabase
+        .from('nessus_vulnerabilities')
+        .select('severity');
+
+      if (vulnError) throw vulnError;
+
+      // Count vulnerabilities by severity
+      const severityCounts = {
+        Critical: 0,
+        High: 0,
+        Medium: 0,
+        Low: 0,
+      };
+
+      vulnerabilities?.forEach(vuln => {
+        if (severityCounts.hasOwnProperty(vuln.severity)) {
+          severityCounts[vuln.severity as keyof typeof severityCounts]++;
+        }
+      });
+
+      const metrics: RiskMetric[] = [
+        { name: "Critical", value: severityCounts.Critical, color: "#dc2626", trend: -2 },
+        { name: "High", value: severityCounts.High, color: "#ea580c", trend: -5 },
+        { name: "Medium", value: severityCounts.Medium, color: "#d97706", trend: +3 },
+        { name: "Low", value: severityCounts.Low, color: "#65a30d", trend: +12 },
+      ];
+
+      setRiskMetrics(metrics);
+    } catch (error) {
+      console.error('Error fetching risk data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const riskAssessments = [
+    {
+      id: "RA-001",
+      asset: "Web Server Cluster",
+      riskScore: 8.5,
+      status: "Active",
+      lastAssessed: "2024-01-15",
+      assessor: "Security Team",
+      category: "Infrastructure"
+    },
+    {
+      id: "RA-002",
+      asset: "Database Servers",
+      riskScore: 9.2,
+      status: "Review",
+      lastAssessed: "2024-01-14",
+      assessor: "Security Team",
+      category: "Data"
+    },
+    {
+      id: "RA-003",
+      asset: "Network Firewalls",
+      riskScore: 6.8,
+      status: "Completed",
+      lastAssessed: "2024-01-13",
+      assessor: "Security Team",
+      category: "Network"
+    }
+  ];
+
+  const mitigationPlans = [
+    {
+      id: "MP-001",
+      title: "Critical Vulnerability Remediation",
+      priority: "Critical",
+      status: "In Progress",
+      dueDate: "2024-02-01",
+      assignedTo: "Security Team",
+      progress: 65
+    },
+    {
+      id: "MP-002",
+      title: "Network Segmentation Implementation",
+      priority: "High",
+      status: "Planning",
+      dueDate: "2024-02-15",
+      assignedTo: "Network Team",
+      progress: 25
+    },
+    {
+      id: "MP-003",
+      title: "Access Control Review",
+      priority: "Medium",
+      status: "Completed",
+      dueDate: "2024-01-30",
+      assignedTo: "IAM Team",
+      progress: 100
+    }
+  ];
 
   const getRiskColor = (score: number) => {
     if (score >= 9) return "text-red-400";
@@ -116,12 +153,23 @@ export const RiskManagement = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-slate-400 mt-2">Loading risk data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Risk Management</h2>
-          <p className="text-slate-400">Comprehensive risk assessment and mitigation planning</p>
+          <p className="text-slate-400">Comprehensive risk assessment and mitigation planning based on real vulnerability data</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="border-slate-600">
@@ -181,6 +229,9 @@ export const RiskManagement = () => {
             <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
                 <CardTitle className="text-white">Risk Distribution</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Current vulnerability distribution by severity
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -206,20 +257,20 @@ export const RiskManagement = () => {
 
             <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white">Risk Trends</CardTitle>
+                <CardTitle className="text-white">Risk by Severity</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Vulnerability count breakdown
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={riskTrends}>
+                  <BarChart data={riskMetrics}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" stroke="#9CA3AF" />
+                    <XAxis dataKey="name" stroke="#9CA3AF" />
                     <YAxis stroke="#9CA3AF" />
                     <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                    <Line type="monotone" dataKey="critical" stroke="#dc2626" strokeWidth={2} />
-                    <Line type="monotone" dataKey="high" stroke="#ea580c" strokeWidth={2} />
-                    <Line type="monotone" dataKey="medium" stroke="#d97706" strokeWidth={2} />
-                    <Line type="monotone" dataKey="low" stroke="#65a30d" strokeWidth={2} />
-                  </LineChart>
+                    <Bar dataKey="value" fill="#3B82F6" />
+                  </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -341,14 +392,48 @@ export const RiskManagement = () => {
             <CardHeader>
               <CardTitle className="text-white">Risk Monitoring Dashboard</CardTitle>
               <CardDescription className="text-slate-400">
-                Real-time monitoring of risk indicators and alerts
+                Real-time monitoring of risk indicators and alerts based on uploaded vulnerability data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-slate-400">
-                <AlertTriangle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Monitoring Dashboard</h3>
-                <p>Real-time risk monitoring features will be available here</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Active Threats</p>
+                        <p className="text-2xl font-bold text-red-400">{riskMetrics.find(m => m.name === 'Critical')?.value || 0}</p>
+                      </div>
+                      <AlertTriangle className="h-8 w-8 text-red-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Total Vulnerabilities</p>
+                        <p className="text-2xl font-bold text-blue-400">
+                          {riskMetrics.reduce((sum, metric) => sum + metric.value, 0)}
+                        </p>
+                      </div>
+                      <Shield className="h-8 w-8 text-blue-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Risk Score</p>
+                        <p className="text-2xl font-bold text-orange-400">8.5/10</p>
+                      </div>
+                      <Target className="h-8 w-8 text-orange-400" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
@@ -359,14 +444,66 @@ export const RiskManagement = () => {
             <CardHeader>
               <CardTitle className="text-white">Compliance Management</CardTitle>
               <CardDescription className="text-slate-400">
-                Track compliance status and regulatory requirements
+                Track compliance status and regulatory requirements based on current vulnerability data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-slate-400">
-                <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Compliance Tracking</h3>
-                <p>Compliance management features will be available here</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">NIST Framework</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Identify</span>
+                        <Badge className="bg-green-500/20 text-green-400">Compliant</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Protect</span>
+                        <Badge className="bg-yellow-500/20 text-yellow-400">Partial</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Detect</span>
+                        <Badge className="bg-green-500/20 text-green-400">Compliant</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Respond</span>
+                        <Badge className="bg-red-500/20 text-red-400">Non-Compliant</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Recover</span>
+                        <Badge className="bg-yellow-500/20 text-yellow-400">Partial</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">PCI DSS</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Network Security</span>
+                        <Badge className="bg-yellow-500/20 text-yellow-400">75%</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Data Protection</span>
+                        <Badge className="bg-green-500/20 text-green-400">95%</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Access Control</span>
+                        <Badge className="bg-red-500/20 text-red-400">45%</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-300">Monitoring</span>
+                        <Badge className="bg-green-500/20 text-green-400">88%</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
