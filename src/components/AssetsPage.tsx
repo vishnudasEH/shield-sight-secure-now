@@ -11,17 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Asset {
   id: string;
-  name: string;
-  asset_type: string;
+  host_name: string;
   ip_address: string;
-  hostname: string;
   operating_system: string;
-  environment: string;
-  business_unit: string;
-  location: string;
-  owner_email: string;
+  vulnerability_count: number;
   risk_score: number;
-  last_scan_date: string;
+  mac_address: string;
+  netbios_name: string;
+  fqdn: string;
   created_at: string;
 }
 
@@ -30,7 +27,6 @@ export const AssetsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [filterEnvironment, setFilterEnvironment] = useState("all");
 
   useEffect(() => {
     fetchAssets();
@@ -39,7 +35,7 @@ export const AssetsPage = () => {
   const fetchAssets = async () => {
     try {
       const { data, error } = await supabase
-        .from('asset_inventory')
+        .from('nessus_assets')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -54,43 +50,38 @@ export const AssetsPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = 
-      asset.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.host_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       asset.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.hostname?.toLowerCase().includes(searchTerm.toLowerCase());
+      asset.netbios_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.fqdn?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = filterType === "all" || asset.asset_type === filterType;
-    const matchesEnvironment = filterEnvironment === "all" || asset.environment === filterEnvironment;
-    
-    return matchesSearch && matchesType && matchesEnvironment;
+    return matchesSearch;
   });
 
-  const getRiskBadgeColor = (riskScore: number) => {
-    if (riskScore >= 8) return "bg-red-500/20 text-red-400";
-    if (riskScore >= 6) return "bg-orange-500/20 text-orange-400";
-    if (riskScore >= 4) return "bg-yellow-500/20 text-yellow-400";
+  const getRiskBadgeColor = (vulnCount: number) => {
+    if (vulnCount >= 10) return "bg-red-500/20 text-red-400";
+    if (vulnCount >= 5) return "bg-orange-500/20 text-orange-400";
+    if (vulnCount >= 1) return "bg-yellow-500/20 text-yellow-400";
     return "bg-green-500/20 text-green-400";
   };
 
-  const getRiskLabel = (riskScore: number) => {
-    if (riskScore >= 8) return "Critical";
-    if (riskScore >= 6) return "High";
-    if (riskScore >= 4) return "Medium";
+  const getRiskLabel = (vulnCount: number) => {
+    if (vulnCount >= 10) return "Critical";
+    if (vulnCount >= 5) return "High";
+    if (vulnCount >= 1) return "Medium";
     return "Low";
   };
 
-  const getAssetIcon = (assetType: string) => {
-    switch (assetType?.toLowerCase()) {
-      case 'server':
-        return <Server className="h-4 w-4" />;
-      case 'web application':
-        return <Globe className="h-4 w-4" />;
-      default:
-        return <Shield className="h-4 w-4" />;
+  const getAssetIcon = (osType: string) => {
+    if (osType?.toLowerCase().includes('windows')) {
+      return <Server className="h-4 w-4" />;
+    } else if (osType?.toLowerCase().includes('linux')) {
+      return <Server className="h-4 w-4" />;
+    } else if (osType?.toLowerCase().includes('web')) {
+      return <Globe className="h-4 w-4" />;
     }
+    return <Shield className="h-4 w-4" />;
   };
-
-  const uniqueTypes = [...new Set(assets.map(a => a.asset_type).filter(Boolean))];
-  const uniqueEnvironments = [...new Set(assets.map(a => a.environment).filter(Boolean))];
 
   if (loading) {
     return (
@@ -109,7 +100,7 @@ export const AssetsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Asset Inventory</h2>
-          <p className="text-slate-400">Manage and monitor your IT assets</p>
+          <p className="text-slate-400">Manage and monitor your IT assets from Nessus scans</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="border-slate-600 text-slate-300">
@@ -126,40 +117,12 @@ export const AssetsPage = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Search assets by name, IP, or hostname..."
+                  placeholder="Search assets by hostname, IP, or FQDN..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 bg-slate-700 border-slate-600 text-white"
                 />
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Asset Type" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all" className="text-white">All Types</SelectItem>
-                  {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type} className="text-white">
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterEnvironment} onValueChange={setFilterEnvironment}>
-                <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Environment" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all" className="text-white">All Environments</SelectItem>
-                  {uniqueEnvironments.map(env => (
-                    <SelectItem key={env} value={env} className="text-white">
-                      {env}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </CardContent>
@@ -170,7 +133,7 @@ export const AssetsPage = () => {
         <CardHeader>
           <CardTitle className="text-white">Assets</CardTitle>
           <CardDescription className="text-slate-400">
-            Complete inventory of your IT infrastructure
+            Complete inventory of discovered assets from Nessus scans
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,7 +141,7 @@ export const AssetsPage = () => {
             <div className="text-center py-12">
               <Shield className="h-12 w-12 mx-auto mb-4 text-slate-600" />
               <p className="text-slate-400 text-lg mb-2">No assets found</p>
-              <p className="text-slate-500">Try adjusting your search or filters</p>
+              <p className="text-slate-500">Upload a Nessus file to discover assets or try adjusting your search</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -186,12 +149,11 @@ export const AssetsPage = () => {
                 <TableHeader>
                   <TableRow className="border-slate-700">
                     <TableHead className="text-slate-300">Asset</TableHead>
-                    <TableHead className="text-slate-300">Type</TableHead>
                     <TableHead className="text-slate-300">IP Address</TableHead>
-                    <TableHead className="text-slate-300">Environment</TableHead>
-                    <TableHead className="text-slate-300">Risk Score</TableHead>
+                    <TableHead className="text-slate-300">Operating System</TableHead>
+                    <TableHead className="text-slate-300">Vulnerabilities</TableHead>
+                    <TableHead className="text-slate-300">Risk Level</TableHead>
                     <TableHead className="text-slate-300">Last Scan</TableHead>
-                    <TableHead className="text-slate-300">Owner</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -199,43 +161,36 @@ export const AssetsPage = () => {
                     <TableRow key={asset.id} className="border-slate-700 hover:bg-slate-700/50">
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getAssetIcon(asset.asset_type)}
+                          {getAssetIcon(asset.operating_system || '')}
                           <div>
-                            <p className="text-slate-300 font-medium">{asset.name}</p>
-                            {asset.hostname && (
-                              <p className="text-xs text-slate-500">{asset.hostname}</p>
+                            <p className="text-slate-300 font-medium">{asset.host_name}</p>
+                            {asset.netbios_name && asset.netbios_name !== asset.host_name && (
+                              <p className="text-xs text-slate-500">{asset.netbios_name}</p>
+                            )}
+                            {asset.fqdn && asset.fqdn !== asset.host_name && (
+                              <p className="text-xs text-slate-500">{asset.fqdn}</p>
                             )}
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell className="text-slate-300">{asset.ip_address || 'Unknown'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="border-slate-600 text-slate-300">
-                          {asset.asset_type || 'Unknown'}
+                          {asset.operating_system || 'Unknown'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-slate-300">{asset.ip_address}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-slate-700 text-slate-300">
-                          {asset.environment || 'Unknown'}
+                          {asset.vulnerability_count} vulnerabilities
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {asset.risk_score ? (
-                          <Badge className={getRiskBadgeColor(asset.risk_score)}>
-                            {getRiskLabel(asset.risk_score)} ({asset.risk_score})
-                          </Badge>
-                        ) : (
-                          <span className="text-slate-500">N/A</span>
-                        )}
+                        <Badge className={getRiskBadgeColor(asset.vulnerability_count)}>
+                          {getRiskLabel(asset.vulnerability_count)}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-slate-400">
-                        {asset.last_scan_date 
-                          ? new Date(asset.last_scan_date).toLocaleDateString()
-                          : 'Never'
-                        }
-                      </TableCell>
-                      <TableCell className="text-slate-400">
-                        {asset.owner_email || 'Unassigned'}
+                        {new Date(asset.created_at).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
                   ))}

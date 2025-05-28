@@ -21,14 +21,14 @@ export interface VulnerabilityTrend {
 export const dashboardService = {
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     try {
-      // Get vulnerability counts by severity
+      // Get vulnerability counts by severity from nessus_vulnerabilities table
       const { data: vulnerabilities, error: vulnError } = await supabase
         .from('nessus_vulnerabilities')
         .select('severity');
 
       if (vulnError) throw vulnError;
 
-      // Get asset count
+      // Get asset count from nessus_assets table
       const { data: assets, error: assetError } = await supabase
         .from('nessus_assets')
         .select('id');

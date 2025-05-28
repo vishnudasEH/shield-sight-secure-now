@@ -479,6 +479,27 @@ export type Database = {
         }
         Relationships: []
       }
+      nessus_scan_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          scan_data: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          scan_data: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          scan_data?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       nessus_upload_sessions: {
         Row: {
           created_at: string
@@ -606,6 +627,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nuclei_scan_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          results: Json
+          scan_name: string
+          scan_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          results: Json
+          scan_name: string
+          scan_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          results?: Json
+          scan_name?: string
+          scan_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       remediation_tickets: {
         Row: {
