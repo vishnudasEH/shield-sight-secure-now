@@ -260,6 +260,11 @@ export const AuthPage = () => {
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  <div className="text-center text-sm text-slate-400">
+                    <p>Demo admin account:</p>
+                    <p>Email: admin@vulntracker.com</p>
+                    <p>Password: admin123!</p>
+                  </div>
                 </form>
               </TabsContent>
 
