@@ -22,19 +22,51 @@ const AppRoutes = () => {
     );
   }
 
-  // If user is logged in and is admin, redirect to admin dashboard
-  if (user && profile && profile.role === 'admin') {
+  // If not logged in, show auth page
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+
+  // If user exists but profile is not loaded yet, show loading
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="text-white">Loading profile...</div>
+      </div>
+    );
+  }
+
+  // If user is pending approval, show message
+  if (profile.status === 'pending') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-4">Account Pending Approval</h2>
+          <p className="text-slate-400">Your account is waiting for admin approval. Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is approved admin, show admin routes
+  if (profile.role === 'admin' && profile.status === 'approved') {
     return (
       <Routes>
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="/auth" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
   }
 
-  // If user is logged in but not admin, show regular app
-  if (user && profile && profile.status === 'approved') {
+  // If user is approved regular user, show main app
+  if (profile.status === 'approved') {
     return (
       <Routes>
         <Route path="/" element={
@@ -48,12 +80,14 @@ const AppRoutes = () => {
     );
   }
 
-  // If not logged in, show auth page
+  // Fallback for any other status
   return (
-    <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="*" element={<Navigate to="/auth" replace />} />
-    </Routes>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="text-center text-white">
+        <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+        <p className="text-slate-400">Your account status does not allow access to the application.</p>
+      </div>
+    </div>
   );
 };
 
