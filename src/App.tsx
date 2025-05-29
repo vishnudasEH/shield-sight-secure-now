@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { 
   Shield, 
   FileText, 
@@ -16,7 +16,8 @@ import {
   Users,
   AlertTriangle,
   UserPlus,
-  Target
+  Target,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VulnerabilityDashboard } from "./components/VulnerabilityDashboard";
@@ -28,6 +29,9 @@ import { TeamManagement } from "./components/TeamManagement";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { NessusFileUpload } from "./components/NessusFileUpload";
 import { VulnerabilityAssignment } from "./components/VulnerabilityAssignment";
+import { AuthPage } from "./components/AuthPage";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +49,12 @@ const sidebarItems = [
 
 function AppSidebar() {
   const location = useLocation();
+  const { signOut, profile } = useAuth();
   const currentPath = location.pathname;
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <Sidebar className="border-r border-slate-700/50 bg-gradient-to-b from-slate-900 to-slate-950">
@@ -62,9 +71,17 @@ function AppSidebar() {
               <p className="text-slate-400 text-xs">Security Platform</p>
             </div>
           </div>
+          {profile && (
+            <div className="text-xs text-slate-400">
+              Welcome, {profile.first_name} {profile.last_name}
+              {profile.role === 'admin' && (
+                <span className="ml-2 px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Admin</span>
+              )}
+            </div>
+          )}
         </div>
         
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {sidebarItems.map((item) => (
             <Link
               key={item.path}
@@ -89,6 +106,17 @@ function AppSidebar() {
             </Link>
           ))}
         </nav>
+
+        <div className="mt-auto pt-4 border-t border-slate-700">
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
@@ -139,12 +167,14 @@ function MainContent() {
 
 function AppLayout() {
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-slate-900">
-        <AppSidebar />
-        <MainContent />
-      </div>
-    </SidebarProvider>
+    <ProtectedRoute>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-slate-900">
+          <AppSidebar />
+          <MainContent />
+        </div>
+      </SidebarProvider>
+    </ProtectedRoute>
   );
 }
 
@@ -154,17 +184,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />} />
-          <Route path="/vulnerabilities" element={<AppLayout />} />
-          <Route path="/assets" element={<AppLayout />} />
-          <Route path="/assignment" element={<AppLayout />} />
-          <Route path="/risk" element={<AppLayout />} />
-          <Route path="/reports" element={<AppLayout />} />
-          <Route path="/upload" element={<AppLayout />} />
-          <Route path="/team" element={<AppLayout />} />
-          <Route path="/settings" element={<AppLayout />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/" element={<AppLayout />} />
+            <Route path="/vulnerabilities" element={<AppLayout />} />
+            <Route path="/assets" element={<AppLayout />} />
+            <Route path="/assignment" element={<AppLayout />} />
+            <Route path="/risk" element={<AppLayout />} />
+            <Route path="/reports" element={<AppLayout />} />
+            <Route path="/upload" element={<AppLayout />} />
+            <Route path="/team" element={<AppLayout />} />
+            <Route path="/settings" element={<AppLayout />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
