@@ -56,9 +56,20 @@ export const AuthPage = () => {
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profileError || !profile) {
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          toast({
+            title: "Account Error",
+            description: "There was an issue accessing your account.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
+        if (!profile) {
           toast({
             title: "Account Not Found",
             description: "Your account is pending admin approval.",
