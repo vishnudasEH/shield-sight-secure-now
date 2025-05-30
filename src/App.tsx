@@ -53,25 +53,18 @@ const AppRoutes = () => {
     );
   }
 
-  // If user is approved admin, show admin routes
-  if (profile.role === 'admin' && profile.status === 'approved') {
-    return (
-      <Routes>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/auth" element={<Navigate to="/admin" replace />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    );
-  }
-
-  // If user is approved regular user, show main app
+  // If user is approved (both admin and regular users go to main dashboard)
   if (profile.status === 'approved') {
     return (
       <Routes>
         <Route path="/" element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminDashboard />
           </ProtectedRoute>
         } />
         <Route path="/auth" element={<Navigate to="/" replace />} />

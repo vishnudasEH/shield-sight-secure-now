@@ -685,6 +685,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_duplicate: {
+        Row: {
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       remediation_tickets: {
         Row: {
           asset_id: string | null
@@ -801,6 +831,8 @@ export type Database = {
           id: string
           last_name: string
           password_hash: string
+          processed_at: string | null
+          processed_by: string | null
           status: string | null
           updated_at: string | null
         }
@@ -811,6 +843,8 @@ export type Database = {
           id?: string
           last_name: string
           password_hash: string
+          processed_at?: string | null
+          processed_by?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -821,10 +855,20 @@ export type Database = {
           id?: string
           last_name?: string
           password_hash?: string
+          processed_at?: string | null
+          processed_by?: string | null
           status?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "signup_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vulnerabilities: {
         Row: {
@@ -993,6 +1037,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_user_account: {
+        Args: {
+          user_email: string
+          user_password: string
+          user_first_name: string
+          user_last_name: string
+          user_role?: string
+        }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
