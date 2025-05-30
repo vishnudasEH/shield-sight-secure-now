@@ -28,13 +28,6 @@ interface NewUserForm {
   role: string;
 }
 
-interface CreateUserResponse {
-  success?: boolean;
-  user_id?: string;
-  message?: string;
-  error?: string;
-}
-
 export const AdminSignupManagement = () => {
   const [requests, setRequests] = useState<SignupRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,38 +193,7 @@ export const AdminSignupManagement = () => {
     setCreating(true);
 
     try {
-      // Call the database function to create user
-      const { data, error } = await supabase.rpc('create_user_account', {
-        user_email: newUserForm.email,
-        user_password: newUserForm.password,
-        user_first_name: newUserForm.firstName,
-        user_last_name: newUserForm.lastName,
-        user_role: newUserForm.role
-      });
-
-      if (error) {
-        console.error('Error creating user:', error);
-        toast({
-          title: "Error",
-          description: `Failed to create user: ${error.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Type assertion for the response
-      const response = data as CreateUserResponse;
-
-      if (response?.error) {
-        toast({
-          title: "Error",
-          description: response.error,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Now create the actual auth user
+      // Create the auth user first
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUserForm.email,
         password: newUserForm.password,
@@ -252,16 +214,34 @@ export const AdminSignupManagement = () => {
         return;
       }
 
-      // Update the profile with the correct auth user ID
-      if (authData.user && response?.user_id) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ id: authData.user.id })
-          .eq('id', response.user_id);
+      if (!authData.user) {
+        toast({
+          title: "Error",
+          description: "Failed to create user - no user data returned",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        if (updateError) {
-          console.error('Profile update error:', updateError);
-        }
+      // Now create the profile with the auth user ID
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          first_name: newUserForm.firstName,
+          last_name: newUserForm.lastName,
+          role: newUserForm.role,
+          status: 'approved'
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        toast({
+          title: "Error",
+          description: `Failed to create user profile: ${profileError.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
