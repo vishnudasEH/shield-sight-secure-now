@@ -3,8 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { AdminSignupManagement } from './AdminSignupManagement';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Users, Settings, LogOut } from 'lucide-react';
+import { Shield, Users, Settings, LogOut, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {
   const { user, profile, signOut } = useAuth();
@@ -53,6 +54,16 @@ export const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <Link to="/dashboard">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Main Dashboard
+                </Button>
+              </Link>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {profile?.first_name} {profile?.last_name}
