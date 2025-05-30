@@ -28,6 +28,13 @@ interface NewUserForm {
   role: string;
 }
 
+interface CreateUserResponse {
+  success?: boolean;
+  user_id?: string;
+  message?: string;
+  error?: string;
+}
+
 export const AdminSignupManagement = () => {
   const [requests, setRequests] = useState<SignupRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,10 +219,13 @@ export const AdminSignupManagement = () => {
         return;
       }
 
-      if (data?.error) {
+      // Type assertion for the response
+      const response = data as CreateUserResponse;
+
+      if (response?.error) {
         toast({
           title: "Error",
-          description: data.error,
+          description: response.error,
           variant: "destructive",
         });
         return;
@@ -243,11 +253,11 @@ export const AdminSignupManagement = () => {
       }
 
       // Update the profile with the correct auth user ID
-      if (authData.user && data?.user_id) {
+      if (authData.user && response?.user_id) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ id: authData.user.id })
-          .eq('id', data.user_id);
+          .eq('id', response.user_id);
 
         if (updateError) {
           console.error('Profile update error:', updateError);
