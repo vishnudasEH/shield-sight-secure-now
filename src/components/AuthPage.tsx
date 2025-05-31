@@ -262,8 +262,8 @@ export const AuthPage = () => {
                   </Button>
                   <div className="text-center text-sm text-slate-400">
                     <p>Demo admin account:</p>
-                    <p>Email: admin@vulntracker.com</p>
-                    <p>Password: admin123!</p>
+                    <p>Email: </p>
+                    <p>Password: </p>
                   </div>
                 </form>
               </TabsContent>
