@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target, Menu, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { VulnerabilityDashboard } from "@/components/VulnerabilityDashboard";
 import { VulnerabilityScanner } from "@/components/VulnerabilityScanner";
@@ -138,37 +137,53 @@ const Index = () => {
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
-            <TabsContent value="dashboard" className={activeTab === "dashboard" ? "block" : "hidden"}>
-              <VulnerabilityDashboard />
-            </TabsContent>
+            {activeTab === "dashboard" && (
+              <div>
+                <VulnerabilityDashboard />
+              </div>
+            )}
 
-            <TabsContent value="scanner" className={activeTab === "scanner" ? "block" : "hidden"}>
-              <VulnerabilityScanner />
-            </TabsContent>
+            {activeTab === "scanner" && (
+              <div>
+                <VulnerabilityScanner />
+              </div>
+            )}
 
-            <TabsContent value="vulnerabilities" className={activeTab === "vulnerabilities" ? "block" : "hidden"}>
-              <VulnerabilityList />
-            </TabsContent>
+            {activeTab === "vulnerabilities" && (
+              <div>
+                <VulnerabilityList />
+              </div>
+            )}
 
-            <TabsContent value="assets" className={activeTab === "assets" ? "block" : "hidden"}>
-              <AssetsPage />
-            </TabsContent>
+            {activeTab === "assets" && (
+              <div>
+                <AssetsPage />
+              </div>
+            )}
 
-            <TabsContent value="risk" className={activeTab === "risk" ? "block" : "hidden"}>
-              <RiskManagement />
-            </TabsContent>
+            {activeTab === "risk" && (
+              <div>
+                <RiskManagement />
+              </div>
+            )}
 
-            <TabsContent value="reports" className={activeTab === "reports" ? "block" : "hidden"}>
-              <ReportsSection />
-            </TabsContent>
+            {activeTab === "reports" && (
+              <div>
+                <ReportsSection />
+              </div>
+            )}
 
-            <TabsContent value="team" className={activeTab === "team" ? "block" : "hidden"}>
-              <TeamManagement />
-            </TabsContent>
+            {activeTab === "team" && (
+              <div>
+                <TeamManagement />
+              </div>
+            )}
 
-            <TabsContent value="settings" className={activeTab === "settings" ? "block" : "hidden"}>
-              <SettingsPanel />
-            </TabsContent>
+            {activeTab === "settings" && (
+              <div>
+                <SettingsPanel />
+              </div>
+            )}
           </div>
         </main>
       </div>
