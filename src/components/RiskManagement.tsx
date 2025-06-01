@@ -20,11 +20,13 @@ import {
   Download,
   Eye,
   Plus,
-  Edit
+  Edit,
+  Clock
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useForm } from "react-hook-form";
+import { SLAVulnerabilityAging } from "./SLAVulnerabilityAging";
 
 interface RiskMetric {
   name: string;
@@ -300,7 +302,7 @@ export const RiskManagement = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-slate-700">
+        <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-slate-700">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -312,6 +314,10 @@ export const RiskManagement = () => {
           <TabsTrigger value="mitigation" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Mitigation Plans
+          </TabsTrigger>
+          <TabsTrigger value="sla-aging" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            SLA & Aging
           </TabsTrigger>
           <TabsTrigger value="monitoring" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
@@ -714,6 +720,10 @@ export const RiskManagement = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="sla-aging" className="mt-6">
+          <SLAVulnerabilityAging />
         </TabsContent>
 
         <TabsContent value="monitoring" className="mt-6">

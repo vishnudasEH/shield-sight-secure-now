@@ -870,6 +870,56 @@ export type Database = {
           },
         ]
       }
+      sla_breach_trends: {
+        Row: {
+          created_at: string
+          critical_breaches: number
+          filename: string | null
+          high_breaches: number
+          id: string
+          low_breaches: number
+          medium_breaches: number
+          scan_date: string
+          total_breaches: number
+          total_hosts: number
+          upload_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          critical_breaches?: number
+          filename?: string | null
+          high_breaches?: number
+          id?: string
+          low_breaches?: number
+          medium_breaches?: number
+          scan_date: string
+          total_breaches?: number
+          total_hosts?: number
+          upload_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          critical_breaches?: number
+          filename?: string | null
+          high_breaches?: number
+          id?: string
+          low_breaches?: number
+          medium_breaches?: number
+          scan_date?: string
+          total_breaches?: number
+          total_hosts?: number
+          upload_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_breach_trends_upload_session_id_fkey"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "nessus_upload_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vulnerabilities: {
         Row: {
           asset: string | null
@@ -954,6 +1004,54 @@ export type Database = {
           status?: string | null
           synopsis?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vulnerability_aging: {
+        Row: {
+          age_days: number | null
+          created_at: string
+          first_detected_date: string
+          hostname: string
+          id: string
+          is_sla_breach: boolean | null
+          last_seen_date: string
+          plugin_id: string
+          plugin_name: string
+          severity: string
+          sla_target_days: number
+          updated_at: string
+          vulnerability_id: string
+        }
+        Insert: {
+          age_days?: number | null
+          created_at?: string
+          first_detected_date: string
+          hostname: string
+          id?: string
+          is_sla_breach?: boolean | null
+          last_seen_date: string
+          plugin_id: string
+          plugin_name: string
+          severity: string
+          sla_target_days: number
+          updated_at?: string
+          vulnerability_id: string
+        }
+        Update: {
+          age_days?: number | null
+          created_at?: string
+          first_detected_date?: string
+          hostname?: string
+          id?: string
+          is_sla_breach?: boolean | null
+          last_seen_date?: string
+          plugin_id?: string
+          plugin_name?: string
+          severity?: string
+          sla_target_days?: number
+          updated_at?: string
+          vulnerability_id?: string
         }
         Relationships: []
       }
@@ -1050,6 +1148,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_sla_target_days: {
+        Args: { severity_level: string }
+        Returns: number
       }
     }
     Enums: {
