@@ -655,6 +655,72 @@ export type Database = {
         }
         Relationships: []
       }
+      nuclei_vulnerabilities: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          host: string
+          id: string
+          last_status_change: string | null
+          matched_at: string
+          matcher_name: string | null
+          matcher_status: boolean | null
+          scan_id: string
+          severity: string
+          template_id: string
+          template_name: string
+          updated_at: string
+          vuln_hash: string
+          vuln_id: string
+          vuln_status: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at: string
+          description?: string | null
+          host: string
+          id?: string
+          last_status_change?: string | null
+          matched_at: string
+          matcher_name?: string | null
+          matcher_status?: boolean | null
+          scan_id: string
+          severity: string
+          template_id: string
+          template_name: string
+          updated_at: string
+          vuln_hash: string
+          vuln_id: string
+          vuln_status?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          host?: string
+          id?: string
+          last_status_change?: string | null
+          matched_at?: string
+          matcher_name?: string | null
+          matcher_status?: boolean | null
+          scan_id?: string
+          severity?: string
+          template_id?: string
+          template_name?: string
+          updated_at?: string
+          vuln_hash?: string
+          vuln_id?: string
+          vuln_status?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -1055,6 +1121,44 @@ export type Database = {
         }
         Relationships: []
       }
+      vulnerability_audit_logs: {
+        Row: {
+          action: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          timestamp: string | null
+          user_id: string | null
+          vulnerability_id: string | null
+        }
+        Insert: {
+          action: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          timestamp?: string | null
+          user_id?: string | null
+          vulnerability_id?: string | null
+        }
+        Update: {
+          action?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          timestamp?: string | null
+          user_id?: string | null
+          vulnerability_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vulnerability_audit_logs_vulnerability_id_fkey"
+            columns: ["vulnerability_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_vulnerabilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vulnerability_repository: {
         Row: {
           assigned_to: string | null
@@ -1135,6 +1239,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_sla_days: {
+        Args: { severity: string }
+        Returns: number
+      }
       create_user_account: {
         Args: {
           user_email: string
@@ -1152,6 +1260,10 @@ export type Database = {
       get_sla_target_days: {
         Args: { severity_level: string }
         Returns: number
+      }
+      is_sla_breached: {
+        Args: { created_timestamp: string; severity: string }
+        Returns: boolean
       }
     }
     Enums: {
