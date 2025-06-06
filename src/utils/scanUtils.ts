@@ -1,0 +1,18 @@
+
+export const calculateRiskScore = (vulnerabilities: any[]): number => {
+  const severityWeights: Record<string, number> = {
+    critical: 10,
+    high: 7,
+    medium: 4,
+    low: 1,
+    info: 0.1,
+    unknown: 0.5
+  };
+
+  const score = vulnerabilities.reduce((total, vuln) => {
+    const severity = vuln.severity?.toLowerCase() || 'unknown';
+    return total + (severityWeights[severity] || 0.5);
+  }, 0);
+
+  return parseFloat(score.toFixed(2));
+};
