@@ -33,17 +33,30 @@ export function NotificationCenter() {
     if (!user) return;
     
     try {
-      // Direct query to user_notifications table
+      // Query the user_notifications table with proper typing
       const { data, error } = await supabase
-        .from('user_notifications' as any)
+        .from('user_notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
-      setNotifications(data || []);
-      setUnreadCount(data?.filter((n: any) => !n.is_read).length || 0);
+      
+      // Type the data properly
+      const typedData = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        message: item.message,
+        is_read: item.is_read,
+        created_at: item.created_at,
+        related_item_id: item.related_item_id,
+        related_item_type: item.related_item_type,
+        title: item.title
+      })) as Notification[];
+      
+      setNotifications(typedData);
+      setUnreadCount(typedData.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -76,7 +89,7 @@ export function NotificationCenter() {
     
     try {
       const { error } = await supabase
-        .from('user_notifications' as any)
+        .from('user_notifications')
         .update({ is_read: true })
         .eq('id', id);
       
@@ -97,7 +110,7 @@ export function NotificationCenter() {
     
     try {
       const { error } = await supabase
-        .from('user_notifications' as any)
+        .from('user_notifications')
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('is_read', false);
