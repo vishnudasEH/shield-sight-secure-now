@@ -8,6 +8,7 @@ import { AuthPage } from "@/components/AuthPage";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import NucleiVulnerabilitiesPage from "./pages/NucleiVulnerabilitiesPage";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,11 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        } />
+        <Route path="/vulnerabilities/nuclei" element={
+          <ProtectedRoute>
+            <NucleiVulnerabilitiesPage />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={

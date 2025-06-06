@@ -9,29 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Filter, Download, Eye, User, AlertTriangle, CheckCircle, Clock, XCircle } from "lucide-react";
+import { 
+  Search, Filter, Download, Eye, User, AlertTriangle, CheckCircle, Clock, 
+  XCircle, RefreshCw, BarChart3, PieChart
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-
-interface Vulnerability {
-  id: string;
-  scan_id: string;
-  vuln_id: string;
-  vuln_status: string;
-  template_name: string;
-  severity: string;
-  host: string;
-  matched_at: string;
-  template_id: string;
-  description: string | null;
-  assigned_to: string | null;
-  assigned_by: string | null;
-  assigned_at: string | null;
-  last_status_change: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { NucleiVulnerabilityCharts } from "@/components/NucleiVulnerabilityCharts";
+import { NucleiSLADashboard } from "@/components/NucleiSLADashboard";
+import { nucleiService, NucleiVulnerability } from "@/services/nucleiService";
 
 interface User {
   id: string;
@@ -40,13 +29,17 @@ interface User {
 }
 
 export const NucleiVulnerabilities = () => {
-  const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
+  const [vulnerabilities, setVulnerabilities] = useState<NucleiVulnerability[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVuln, setSelectedVuln] = useState<Vulnerability | null>(null);
+  const [selectedVuln, setSelectedVuln] = useState<NucleiVulnerability | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = useState("");
-  const [assignmentNotes, setAssignmentNotes] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [activeTab, setActiveTab] = useState("vulnerabilities");
+  const [sortField, setSortField] = useState<string>("created_at");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,17 +54,66 @@ export const NucleiVulnerabilities = () => {
   useEffect(() => {
     fetchVulnerabilities();
     fetchUsers();
+
+    // Set up realtime subscription
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nuclei_vulnerabilities',
+        },
+        (payload) => {
+          fetchVulnerabilities();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchVulnerabilities = async () => {
     try {
-      const { data, error } = await supabase
-        .from('nuclei_vulnerabilities')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setVulnerabilities(data || []);
+      setLoading(true);
+      const vulnerabilityData = await nucleiService.getAllVulnerabilities({
+        severity: severityFilter !== 'all' ? severityFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        host: hostFilter || undefined,
+        assignee: assigneeFilter !== 'all' ? assigneeFilter : undefined,
+        search: searchTerm || undefined
+      });
+      
+      // Apply sorting
+      const sortedData = [...vulnerabilityData].sort((a, b) => {
+        const fieldA = a[sortField as keyof NucleiVulnerability];
+        const fieldB = b[sortField as keyof NucleiVulnerability];
+        
+        // Handle numeric and string comparisons
+        if (typeof fieldA === 'number' && typeof fieldB === 'number') {
+          return sortDirection === 'asc' ? fieldA - fieldB : fieldB - fieldA;
+        }
+        
+        // Handle dates
+        if (sortField === 'created_at' || sortField === 'updated_at' || sortField === 'matched_at') {
+          const dateA = new Date(fieldA as string).getTime();
+          const dateB = new Date(fieldB as string).getTime();
+          return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        }
+        
+        // Handle strings
+        const strA = String(fieldA || '').toLowerCase();
+        const strB = String(fieldB || '').toLowerCase();
+        
+        return sortDirection === 'asc' 
+          ? strA.localeCompare(strB)
+          : strB.localeCompare(strA);
+      });
+      
+      setVulnerabilities(sortedData);
     } catch (error: any) {
       console.error('Error fetching vulnerabilities:', error);
       toast({
@@ -95,6 +137,15 @@ export const NucleiVulnerabilities = () => {
       setUsers(data || []);
     } catch (error: any) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
   };
 
@@ -129,22 +180,41 @@ export const NucleiVulnerabilities = () => {
     }
   };
 
+  const getSLAStatusBadge = (vulnerability: NucleiVulnerability) => {
+    if (!vulnerability.days_since_creation) return null;
+
+    if (vulnerability.is_sla_breach) {
+      return (
+        <Badge className="bg-red-500/20 text-red-400">
+          SLA Breached ({vulnerability.days_since_creation} days)
+        </Badge>
+      );
+    }
+
+    if (vulnerability.sla_days_remaining! <= 3) {
+      return (
+        <Badge className="bg-yellow-500/20 text-yellow-400">
+          Due Soon ({vulnerability.sla_days_remaining} days)
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge className="bg-green-500/20 text-green-400">
+        {vulnerability.sla_days_remaining} days remaining
+      </Badge>
+    );
+  };
+
   const handleAssign = async () => {
-    if (!selectedVuln || !selectedAssignee) return;
+    if (!selectedVuln || !selectedAssignee || !user) return;
 
     try {
-      const { error } = await supabase
-        .from('nuclei_vulnerabilities')
-        .update({
-          assigned_to: selectedAssignee,
-          assigned_by: user?.id,
-          assigned_at: new Date().toISOString(),
-          last_status_change: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedVuln.id);
-
-      if (error) throw error;
+      await nucleiService.assignVulnerability(
+        selectedVuln.id,
+        selectedAssignee,
+        user.id
+      );
 
       toast({
         title: "Assignment Successful",
@@ -153,7 +223,6 @@ export const NucleiVulnerabilities = () => {
 
       setIsAssignDialogOpen(false);
       setSelectedAssignee("");
-      setAssignmentNotes("");
       fetchVulnerabilities();
     } catch (error: any) {
       console.error('Error assigning vulnerability:', error);
@@ -165,22 +234,60 @@ export const NucleiVulnerabilities = () => {
     }
   };
 
-  const handleStatusUpdate = async (vulnId: string, newStatus: string) => {
+  const handleAddComment = async () => {
+    if (!selectedVuln || !commentText.trim() || !user) return;
+    
     try {
+      // Create a comment record
       const { error } = await supabase
-        .from('nuclei_vulnerabilities')
-        .update({
-          vuln_status: newStatus,
-          last_status_change: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', vulnId);
+        .from('vulnerability_comments')
+        .insert({
+          vulnerability_id: selectedVuln.id,
+          created_by: user.id,
+          comment_text: commentText.trim(),
+        });
 
       if (error) throw error;
 
       toast({
+        title: "Comment Added",
+        description: "Your comment has been added successfully",
+      });
+
+      setIsCommentDialogOpen(false);
+      setCommentText("");
+
+      // If the vulnerability is assigned to someone, notify them
+      if (selectedVuln.assigned_to && selectedVuln.assigned_to !== user.id) {
+        await supabase.from('user_notifications').insert({
+          user_id: selectedVuln.assigned_to,
+          title: 'New Comment on Vulnerability',
+          message: `New comment added to "${selectedVuln.template_name}"`,
+          is_read: false,
+          related_item_type: 'vulnerability',
+          related_item_id: selectedVuln.id
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Error adding comment:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add comment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStatusUpdate = async (vulnId: string, newStatus: string) => {
+    if (!user) return;
+    
+    try {
+      await nucleiService.updateStatus(vulnId, newStatus, user.id);
+
+      toast({
         title: "Status Updated",
-        description: `Vulnerability status changed to ${newStatus}`,
+        description: `Vulnerability status changed to ${newStatus.replace('_', ' ')}`,
       });
 
       fetchVulnerabilities();
@@ -194,19 +301,31 @@ export const NucleiVulnerabilities = () => {
     }
   };
 
-  const filteredVulnerabilities = vulnerabilities.filter(vuln => {
-    const matchesSearch = vuln.template_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vuln.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vuln.vuln_id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSeverity = severityFilter === "all" || vuln.severity === severityFilter;
-    const matchesStatus = statusFilter === "all" || vuln.vuln_status === statusFilter;
-    const matchesHost = !hostFilter || vuln.host.toLowerCase().includes(hostFilter.toLowerCase());
-    const matchesAssignee = assigneeFilter === "all" || 
-                           (assigneeFilter === "unassigned" && !vuln.assigned_to) ||
-                           vuln.assigned_to === assigneeFilter;
-
-    return matchesSearch && matchesSeverity && matchesStatus && matchesHost && matchesAssignee;
-  });
+  const exportToCSV = async () => {
+    try {
+      const csvContent = await nucleiService.exportToCSV();
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nuclei_vulnerabilities_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: "Vulnerability data has been exported to CSV",
+      });
+    } catch (error: any) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getUserName = (userId: string | null) => {
     if (!userId) return "Unassigned";
@@ -214,31 +333,7 @@ export const NucleiVulnerabilities = () => {
     return user ? `${user.first_name} ${user.last_name}` : "Unknown User";
   };
 
-  const exportToCSV = () => {
-    const headers = ['ID', 'Template Name', 'Severity', 'Host', 'Status', 'Assigned To', 'Created At'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredVulnerabilities.map(vuln => 
-        [
-          vuln.vuln_id,
-          `"${vuln.template_name}"`,
-          vuln.severity,
-          vuln.host,
-          vuln.vuln_status,
-          getUserName(vuln.assigned_to),
-          new Date(vuln.created_at).toLocaleDateString()
-        ].join(',')
-      )
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nuclei_vulnerabilities_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const filteredVulnerabilities = vulnerabilities;
 
   if (loading) {
     return (
@@ -250,192 +345,324 @@ export const NucleiVulnerabilities = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Nuclei Vulnerabilities
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Manage and track nuclei scan vulnerabilities with assignment and status tracking
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div>
-              <Label className="text-slate-300">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <Input
-                  placeholder="Search vulnerabilities..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
-                />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Nuclei Vulnerabilities</h1>
+          <p className="text-slate-400">Manage and track vulnerabilities detected by Nuclei scanner</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <NotificationCenter />
+          
+          <Button 
+            variant="outline" 
+            onClick={() => fetchVulnerabilities()} 
+            className="border-slate-600"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="bg-slate-800 border-slate-700">
+          <TabsTrigger value="vulnerabilities" className="data-[state=active]:bg-slate-700">
+            Vulnerabilities
+          </TabsTrigger>
+          <TabsTrigger value="charts" className="data-[state=active]:bg-slate-700">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="sla" className="data-[state=active]:bg-slate-700">
+            <PieChart className="h-4 w-4 mr-2" />
+            SLA & Aging
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="vulnerabilities" className="space-y-6">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Nuclei Vulnerabilities
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Manage and track nuclei scan vulnerabilities with assignment and status tracking
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div>
+                  <Label className="text-slate-300">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search vulnerabilities..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-slate-300">Severity</Label>
+                  <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="all">All Severities</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="info">Info</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-slate-300">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="false_positive">False Positive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-slate-300">Host</Label>
+                  <Input
+                    placeholder="Filter by host..."
+                    value={hostFilter}
+                    onChange={(e) => setHostFilter(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-slate-300">Assignee</Label>
+                  <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="all">All Assignees</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.first_name} {user.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-end">
+                  <Button onClick={exportToCSV} variant="outline" className="border-slate-600">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <Label className="text-slate-300">Severity</Label>
-              <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all">All Severities</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-slate-300">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="false_positive">False Positive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-slate-300">Host</Label>
-              <Input
-                placeholder="Filter by host..."
-                value={hostFilter}
-                onChange={(e) => setHostFilter(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-
-            <div>
-              <Label className="text-slate-300">Assignee</Label>
-              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {users.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.first_name} {user.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={exportToCSV} variant="outline" className="border-slate-600">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-            </div>
-          </div>
-
-          {/* Vulnerabilities Table */}
-          <div className="border border-slate-700 rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-slate-700 hover:bg-slate-700/50">
-                  <TableHead className="text-slate-300">Vulnerability</TableHead>
-                  <TableHead className="text-slate-300">Severity</TableHead>
-                  <TableHead className="text-slate-300">Host</TableHead>
-                  <TableHead className="text-slate-300">Status</TableHead>
-                  <TableHead className="text-slate-300">Assigned To</TableHead>
-                  <TableHead className="text-slate-300">Created</TableHead>
-                  <TableHead className="text-slate-300">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVulnerabilities.map((vuln) => (
-                  <TableRow key={vuln.id} className="border-slate-700 hover:bg-slate-700/30">
-                    <TableCell>
-                      <div>
-                        <div className="text-white font-medium">{vuln.template_name}</div>
-                        <div className="text-slate-400 text-sm">{vuln.vuln_id}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getSeverityColor(vuln.severity)}>
-                        {vuln.severity.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-300">{vuln.host}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(vuln.vuln_status)}
-                        <Badge className={getStatusColor(vuln.vuln_status)}>
-                          {vuln.vuln_status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {getUserName(vuln.assigned_to)}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {new Date(vuln.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="border-slate-600">
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle className="text-white">{vuln.template_name}</DialogTitle>
-                              <DialogDescription className="text-slate-400">
-                                Vulnerability details and information
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="text-slate-300">Vulnerability ID</Label>
-                                  <p className="text-white">{vuln.vuln_id}</p>
+              {/* Vulnerabilities Table */}
+              <div className="border border-slate-700 rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-700 hover:bg-slate-700/50">
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('template_name')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Vulnerability
+                          {sortField === 'template_name' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('severity')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Severity
+                          {sortField === 'severity' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('host')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Host
+                          {sortField === 'host' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('vuln_status')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Status
+                          {sortField === 'vuln_status' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('days_since_creation')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Age / SLA
+                          {sortField === 'days_since_creation' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('assigned_to')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Assigned To
+                          {sortField === 'assigned_to' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-slate-300 cursor-pointer"
+                        onClick={() => handleSort('created_at')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Created
+                          {sortField === 'created_at' && (
+                            sortDirection === 'asc' ? '↑' : '↓'
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="text-slate-300">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVulnerabilities.map((vuln) => (
+                      <TableRow key={vuln.id} className="border-slate-700 hover:bg-slate-700/30">
+                        <TableCell>
+                          <div>
+                            <div className="text-white font-medium">{vuln.template_name}</div>
+                            <div className="text-slate-400 text-sm">{vuln.vuln_id}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getSeverityColor(vuln.severity)}>
+                            {vuln.severity.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-slate-300">{vuln.host}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(vuln.vuln_status)}
+                            <Badge className={getStatusColor(vuln.vuln_status)}>
+                              {vuln.vuln_status.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getSLAStatusBadge(vuln)}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {getUserName(vuln.assigned_to)}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {new Date(vuln.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-slate-600"
+                                  onClick={() => setSelectedVuln(vuln)}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="text-white">{vuln.template_name}</DialogTitle>
+                                  <DialogDescription className="text-slate-400">
+                                    Vulnerability details and information
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label className="text-slate-300">Vulnerability ID</Label>
+                                      <p className="text-white">{vuln.vuln_id}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Template ID</Label>
+                                      <p className="text-white">{vuln.template_id}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Host</Label>
+                                      <p className="text-white">{vuln.host}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Severity</Label>
+                                      <Badge className={getSeverityColor(vuln.severity)}>
+                                        {vuln.severity.toUpperCase()}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Status</Label>
+                                      <Badge className={getStatusColor(vuln.vuln_status)}>
+                                        {vuln.vuln_status.replace('_', ' ').toUpperCase()}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Created</Label>
+                                      <p className="text-white">{new Date(vuln.created_at).toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">Age</Label>
+                                      <p className="text-white">{vuln.days_since_creation} days</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300">SLA Status</Label>
+                                      <div>{getSLAStatusBadge(vuln)}</div>
+                                    </div>
+                                  </div>
+                                  {vuln.description && (
+                                    <div>
+                                      <Label className="text-slate-300">Description</Label>
+                                      <p className="text-white mt-1 p-3 bg-slate-700/50 rounded-md border border-slate-600">
+                                        {vuln.description}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-                                <div>
-                                  <Label className="text-slate-300">Template ID</Label>
-                                  <p className="text-white">{vuln.template_id}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-slate-300">Host</Label>
-                                  <p className="text-white">{vuln.host}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-slate-300">Severity</Label>
-                                  <Badge className={getSeverityColor(vuln.severity)}>
-                                    {vuln.severity.toUpperCase()}
-                                  </Badge>
-                                </div>
-                              </div>
-                              {vuln.description && (
-                                <div>
-                                  <Label className="text-slate-300">Description</Label>
-                                  <p className="text-white mt-1">{vuln.description}</p>
-                                </div>
-                              )}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                              </DialogContent>
+                            </Dialog>
 
-                        {profile?.role === 'admin' && (
-                          <>
                             <Button 
                               size="sm" 
                               variant="outline" 
@@ -446,6 +673,20 @@ export const NucleiVulnerabilities = () => {
                               }}
                             >
                               <User className="h-3 w-3" />
+                            </Button>
+
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="border-slate-600"
+                              onClick={() => {
+                                setSelectedVuln(vuln);
+                                setIsCommentDialogOpen(true);
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-square">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                              </svg>
                             </Button>
 
                             <Select
@@ -462,23 +703,31 @@ export const NucleiVulnerabilities = () => {
                                 <SelectItem value="false_positive">False Positive</SelectItem>
                               </SelectContent>
                             </Select>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-          {filteredVulnerabilities.length === 0 && (
-            <div className="text-center py-8 text-slate-400">
-              No vulnerabilities found matching the current filters.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              {filteredVulnerabilities.length === 0 && (
+                <div className="text-center py-8 text-slate-400">
+                  No vulnerabilities found matching the current filters.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="charts">
+          <NucleiVulnerabilityCharts />
+        </TabsContent>
+        
+        <TabsContent value="sla">
+          <NucleiSLADashboard />
+        </TabsContent>
+      </Tabs>
 
       {/* Assignment Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
@@ -490,6 +739,11 @@ export const NucleiVulnerabilities = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label className="text-slate-300">Vulnerability</Label>
+              <p className="text-white font-medium">{selectedVuln?.template_name}</p>
+              <p className="text-slate-400 text-sm">{selectedVuln?.host}</p>
+            </div>
             <div>
               <Label className="text-slate-300">Assign To</Label>
               <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
@@ -505,15 +759,6 @@ export const NucleiVulnerabilities = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-slate-300">Notes (Optional)</Label>
-              <Textarea
-                placeholder="Add any notes about this assignment..."
-                value={assignmentNotes}
-                onChange={(e) => setAssignmentNotes(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
             <div className="flex justify-end gap-2">
               <Button 
                 variant="outline" 
@@ -528,6 +773,50 @@ export const NucleiVulnerabilities = () => {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Assign
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comment Dialog */}
+      <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add Comment</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Add a comment to this vulnerability
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-slate-300">Vulnerability</Label>
+              <p className="text-white font-medium">{selectedVuln?.template_name}</p>
+              <p className="text-slate-400 text-sm">{selectedVuln?.host}</p>
+            </div>
+            <div>
+              <Label className="text-slate-300">Comment</Label>
+              <Textarea
+                placeholder="Enter your comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white min-h-[120px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCommentDialogOpen(false)}
+                className="border-slate-600"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddComment}
+                disabled={!commentText.trim()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Add Comment
               </Button>
             </div>
           </div>
