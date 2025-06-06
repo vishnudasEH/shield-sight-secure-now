@@ -986,6 +986,39 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          related_item_id: string | null
+          related_item_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_item_id?: string | null
+          related_item_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_item_id?: string | null
+          related_item_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vulnerabilities: {
         Row: {
           asset: string | null
@@ -1159,6 +1192,38 @@ export type Database = {
           },
         ]
       }
+      vulnerability_comments: {
+        Row: {
+          comment_text: string
+          created_at: string | null
+          created_by: string
+          id: string
+          vulnerability_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          vulnerability_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          vulnerability_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vulnerability_comments_vulnerability_id_fkey"
+            columns: ["vulnerability_id"]
+            isOneToOne: false
+            referencedRelation: "nuclei_vulnerabilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vulnerability_repository: {
         Row: {
           assigned_to: string | null
@@ -1239,6 +1304,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_nuclei_sla_days: {
+        Args: { severity: string }
+        Returns: number
+      }
       calculate_sla_days: {
         Args: { severity: string }
         Returns: number
@@ -1260,6 +1329,21 @@ export type Database = {
       get_sla_target_days: {
         Args: { severity_level: string }
         Returns: number
+      }
+      get_vulnerability_counts_by_assignee: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          assignee: string
+          count: number
+        }[]
+      }
+      increment_vulnerability_count: {
+        Args: { asset_id: string; increment_by: number }
+        Returns: number
+      }
+      is_nuclei_sla_breached: {
+        Args: { created_timestamp: string; severity: string }
+        Returns: boolean
       }
       is_sla_breached: {
         Args: { created_timestamp: string; severity: string }

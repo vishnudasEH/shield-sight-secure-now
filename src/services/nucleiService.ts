@@ -150,7 +150,7 @@ export const nucleiService = {
     if (error) throw error;
 
     // Create notification
-    await supabase.from('user_notifications').insert({
+    await supabase.from('user_notifications' as any).insert({
       user_id: assignedTo,
       title: 'New Vulnerability Assigned',
       message: 'You have been assigned a new vulnerability to investigate',
@@ -185,7 +185,7 @@ export const nucleiService = {
 
     // If vulnerability is assigned to someone, notify them about the status change
     if (vuln && vuln.assigned_to && vuln.assigned_to !== userId) {
-      await supabase.from('user_notifications').insert({
+      await supabase.from('user_notifications' as any).insert({
         user_id: vuln.assigned_to,
         title: 'Vulnerability Status Updated',
         message: `Status for "${vuln.template_name}" changed to ${newStatus}`,

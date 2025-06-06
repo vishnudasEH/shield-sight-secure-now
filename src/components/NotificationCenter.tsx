@@ -34,17 +34,32 @@ export function NotificationCenter() {
     
     try {
       const { data, error } = await supabase
-        .from('user_notifications')
+        .rpc('get_user_notifications', { p_user_id: user.id })
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
       setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      setUnreadCount(data?.filter((n: any) => !n.is_read).length || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      
+      // Fallback: try direct query
+      try {
+        const { data, error: fallbackError } = await supabase
+          .from('user_notifications' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (fallbackError) throw fallbackError;
+        setNotifications(data || []);
+        setUnreadCount(data?.filter((n: any) => !n.is_read).length || 0);
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+      }
     }
   };
 
@@ -75,7 +90,7 @@ export function NotificationCenter() {
     
     try {
       const { error } = await supabase
-        .from('user_notifications')
+        .from('user_notifications' as any)
         .update({ is_read: true })
         .eq('id', id);
       
@@ -96,7 +111,7 @@ export function NotificationCenter() {
     
     try {
       const { error } = await supabase
-        .from('user_notifications')
+        .from('user_notifications' as any)
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('is_read', false);

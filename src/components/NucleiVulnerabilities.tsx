@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -240,7 +239,7 @@ export const NucleiVulnerabilities = () => {
     try {
       // Create a comment record
       const { error } = await supabase
-        .from('vulnerability_comments')
+        .from('vulnerability_comments' as any)
         .insert({
           vulnerability_id: selectedVuln.id,
           created_by: user.id,
@@ -259,7 +258,7 @@ export const NucleiVulnerabilities = () => {
 
       // If the vulnerability is assigned to someone, notify them
       if (selectedVuln.assigned_to && selectedVuln.assigned_to !== user.id) {
-        await supabase.from('user_notifications').insert({
+        await supabase.from('user_notifications' as any).insert({
           user_id: selectedVuln.assigned_to,
           title: 'New Comment on Vulnerability',
           message: `New comment added to "${selectedVuln.template_name}"`,
