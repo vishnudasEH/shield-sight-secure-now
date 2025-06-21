@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target, Menu, X } from "lucide-react";
+import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target, Menu, X, Search } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VulnerabilityDashboard } from "@/components/VulnerabilityDashboard";
@@ -11,6 +11,7 @@ import { TeamManagement } from "@/components/TeamManagement";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { AssetsPage } from "@/components/AssetsPage";
 import { RiskManagement } from "@/components/RiskManagement";
+import { CloudflareScanner } from "@/components/CloudflareScanner";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
@@ -21,6 +22,7 @@ const Index = () => {
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: Shield },
     { id: "scanner", label: "Scanner", icon: Scan },
+    { id: "cloudflare", label: "Cloudflare Scanner", icon: Search },
     { id: "vulnerabilities", label: "Vulnerabilities", icon: AlertTriangle },
     { id: "assets", label: "Assets", icon: Server },
     { id: "risk", label: "Risk Management", icon: Target },
@@ -157,6 +159,12 @@ const Index = () => {
               {activeTab === "scanner" && (
                 <div className="space-y-6">
                   <VulnerabilityScanner />
+                </div>
+              )}
+
+              {activeTab === "cloudflare" && (
+                <div className="space-y-6">
+                  <CloudflareScanner />
                 </div>
               )}
 
