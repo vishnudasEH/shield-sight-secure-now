@@ -176,14 +176,12 @@ export const EnhancedScanCharts = ({ summary, previousScan }: EnhancedScanCharts
                   fill="#3b82f6" 
                   name="Current Scan"
                   animationDuration={1000}
-                  animationDelay={200}
                 />
                 <Bar 
                   dataKey="previous" 
                   fill="#64748b" 
                   name="Previous Scan"
                   animationDuration={1000}
-                  animationDelay={400}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -232,7 +230,6 @@ export const EnhancedScanCharts = ({ summary, previousScan }: EnhancedScanCharts
                   fillOpacity={0.3}
                   name="DNS Changes"
                   animationDuration={1200}
-                  animationDelay={300}
                 />
               </AreaChart>
             </ResponsiveContainer>
