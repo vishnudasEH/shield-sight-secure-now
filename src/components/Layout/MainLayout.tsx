@@ -21,7 +21,7 @@ export const MainLayout = ({ children, activeTab, setActiveTab }: MainLayoutProp
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <TopBar onMenuToggle={handleMenuToggle} sidebarOpen={sidebarOpen} />
       
       <div className="flex">
@@ -32,9 +32,11 @@ export const MainLayout = ({ children, activeTab, setActiveTab }: MainLayoutProp
           onClose={handleSidebarClose}
         />
         
-        <main className="flex-1 lg:ml-0">
-          <div className="p-6">
-            {children}
+        <main className="flex-1 lg:ml-0 min-h-[calc(100vh-4rem)]">
+          <div className="p-6 lg:p-8">
+            <div className="animate-fade-in-up">
+              {children}
+            </div>
           </div>
         </main>
       </div>
