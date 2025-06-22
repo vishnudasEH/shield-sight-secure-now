@@ -7,8 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { AlertTriangle, Play, Download, Clock, Globe, Shield, Server, Search, RefreshCw, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { AlertTriangle, Play, Download, Clock, Globe, Shield, Server, Search, RefreshCw, Moon, Sun } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScanSummaryCharts } from "./CloudflareScanner/ScanSummaryCharts";
 import { DNSChangesTab } from "./CloudflareScanner/DNSChangesTab";
@@ -32,45 +31,14 @@ interface ScanSummary {
   };
 }
 
-interface ScheduledScan {
-  id: string;
-  name: string;
-  date: Date;
-  type: 'scheduled' | 'critical' | 'completed';
-  description: string;
-}
-
 export const CloudflareScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [teamsNotificationEnabled, setTeamsNotificationEnabled] = useState(false);
   const [scanSummary, setScanSummary] = useState<ScanSummary | null>(null);
   const [lastScanTime, setLastScanTime] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [scheduledScans, setScheduledScans] = useState<ScheduledScan[]>([
-    {
-      id: '1',
-      name: 'Weekly Security Scan',
-      date: new Date(2024, 5, 25),
-      type: 'scheduled',
-      description: 'Automated weekly vulnerability assessment'
-    },
-    {
-      id: '2',
-      name: 'Critical Infrastructure Check',
-      date: new Date(2024, 5, 28),
-      type: 'critical',
-      description: 'High priority infrastructure scan'
-    },
-    {
-      id: '3',
-      name: 'Compliance Audit Scan',
-      date: new Date(2024, 5, 30),
-      type: 'completed',
-      description: 'Monthly compliance verification - Completed'
-    }
-  ]);
   const { toast } = useToast();
 
   // Simulate scan progress
@@ -97,6 +65,8 @@ export const CloudflareScanner = () => {
   }, [isScanning]);
 
   const loadScanSummary = async () => {
+    // In a real implementation, this would fetch from the actual scan_summary.json file
+    // For demo purposes, using mock data
     const mockSummary: ScanSummary = {
       scan_name: "Cloudflare Discovery Scan",
       date: new Date().toISOString().split('T')[0],
@@ -122,6 +92,9 @@ export const CloudflareScanner = () => {
       title: "Scan Started",
       description: `Cloudflare discovery scan initiated${teamsNotificationEnabled ? ' with Teams notifications' : ''}.`,
     });
+
+    // In a real implementation, this would trigger the Python script
+    // For now, we'll simulate the process
   };
 
   const getSeverityColor = (severity: string) => {
@@ -135,36 +108,13 @@ export const CloudflareScanner = () => {
     return colors[severity as keyof typeof colors] || "bg-gray-500";
   };
 
-  const getEventsForDate = (date: Date) => {
-    return scheduledScans.filter(scan => 
-      scan.date.toDateString() === date.toDateString()
-    );
-  };
-
-  const addScheduledScan = () => {
-    if (!selectedDate) return;
-    
-    const newScan: ScheduledScan = {
-      id: Date.now().toString(),
-      name: 'New Scheduled Scan',
-      date: selectedDate,
-      type: 'scheduled',
-      description: 'Custom scheduled scan'
-    };
-    
-    setScheduledScans([...scheduledScans, newScan]);
-    toast({
-      title: "Scan Scheduled",
-      description: `New scan scheduled for ${selectedDate.toLocaleDateString()}`,
-    });
-  };
-
   useEffect(() => {
+    // Load existing scan summary on component mount
     loadScanSummary();
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${darkMode ? 'dark' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -172,11 +122,20 @@ export const CloudflareScanner = () => {
             Cloudflare Discovery & Vulnerability Scanner
           </h1>
           <p className="text-slate-400">
-            Automated DNS enumeration, scanning, and vulnerability assessment with integrated scheduling
+            Automated DNS enumeration, scanning, and vulnerability assessment
           </p>
         </div>
         
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDarkMode(!darkMode)}
+            className="text-slate-400 hover:text-white"
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          
           <Button
             variant="outline"
             size="sm"
@@ -191,7 +150,7 @@ export const CloudflareScanner = () => {
 
       {/* Last Scan Timestamp */}
       {lastScanTime && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-slate-300">
               <Clock className="h-4 w-4" />
@@ -204,150 +163,66 @@ export const CloudflareScanner = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Scan Control and Calendar in Tabs */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          {/* Scan Trigger Section */}
+          <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Search className="h-5 w-5" />
-                Scan Management
+                Scan Control
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Control scans and manage scheduling
+                Configure and start your Cloudflare discovery scan
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="control" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-slate-700/50">
-                  <TabsTrigger value="control" className="data-[state=active]:bg-slate-600">
-                    Scan Control
-                  </TabsTrigger>
-                  <TabsTrigger value="calendar" className="data-[state=active]:bg-slate-600">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    Calendar & Scheduling
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="control" className="mt-4 space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="teams-notifications"
-                      checked={teamsNotificationEnabled}
-                      onCheckedChange={setTeamsNotificationEnabled}
-                      disabled={isScanning}
-                    />
-                    <Label htmlFor="teams-notifications" className="text-slate-300">
-                      Enable MS Teams notifications
-                    </Label>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="teams-notifications"
+                  checked={teamsNotificationEnabled}
+                  onCheckedChange={setTeamsNotificationEnabled}
+                  disabled={isScanning}
+                />
+                <Label htmlFor="teams-notifications" className="text-slate-300">
+                  Enable MS Teams notifications
+                </Label>
+              </div>
+
+              {isScanning && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm text-slate-400">
+                    <span>Scan Progress</span>
+                    <span>{Math.round(scanProgress)}%</span>
                   </div>
-
-                  {isScanning && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm text-slate-400">
-                        <span>Scan Progress</span>
-                        <span>{Math.round(scanProgress)}%</span>
-                      </div>
-                      <Progress value={scanProgress} className="h-2" />
-                      <div className="flex items-center gap-2 text-slate-400 text-sm">
-                        <RefreshCw className="h-3 w-3 animate-spin" />
-                        <span>
-                          {scanProgress < 30 ? 'Enumerating DNS records...' :
-                           scanProgress < 60 ? 'Scanning new hosts...' :
-                           scanProgress < 90 ? 'Running vulnerability detection...' :
-                           'Generating summary...'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={startScan}
-                    disabled={isScanning}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isScanning ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Scanning...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Scan
-                      </>
-                    )}
-                  </Button>
-                </TabsContent>
-                
-                <TabsContent value="calendar" className="mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Calendar */}
-                    <div className="calendar-card">
-                      <h3 className="text-lg font-semibold text-white mb-4">Schedule Scans</h3>
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        className="rounded-md border border-slate-600"
-                        modifiers={{
-                          scheduled: scheduledScans.map(scan => scan.date),
-                        }}
-                        modifiersStyles={{
-                          scheduled: { 
-                            backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                            color: 'white',
-                            fontWeight: 'bold'
-                          }
-                        }}
-                      />
-                      <Button 
-                        onClick={addScheduledScan}
-                        disabled={!selectedDate}
-                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Schedule Scan for {selectedDate?.toLocaleDateString()}
-                      </Button>
-                    </div>
-
-                    {/* Scheduled Events */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Upcoming Scans</h3>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {scheduledScans
-                          .sort((a, b) => a.date.getTime() - b.date.getTime())
-                          .map(scan => (
-                            <div
-                              key={scan.id}
-                              className={`calendar-event ${
-                                scan.type === 'critical' ? 'calendar-event-critical' :
-                                scan.type === 'completed' ? 'calendar-event-scheduled' : 
-                                'calendar-event'
-                              }`}
-                            >
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="font-medium">{scan.name}</h4>
-                                  <p className="text-xs opacity-80">{scan.description}</p>
-                                  <p className="text-xs mt-1">{scan.date.toLocaleDateString()}</p>
-                                </div>
-                                <Badge 
-                                  variant="secondary" 
-                                  className={`text-xs ${
-                                    scan.type === 'critical' ? 'bg-red-600/20 text-red-300' :
-                                    scan.type === 'completed' ? 'bg-green-600/20 text-green-300' :
-                                    'bg-blue-600/20 text-blue-300'
-                                  }`}
-                                >
-                                  {scan.type}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
+                  <Progress value={scanProgress} className="h-2" />
+                  <div className="flex items-center gap-2 text-slate-400 text-sm">
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                    <span>
+                      {scanProgress < 30 ? 'Enumerating DNS records...' :
+                       scanProgress < 60 ? 'Scanning new hosts...' :
+                       scanProgress < 90 ? 'Running vulnerability detection...' :
+                       'Generating summary...'}
+                    </span>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              )}
+
+              <Button
+                onClick={startScan}
+                disabled={isScanning}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {isScanning ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Scan
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -355,7 +230,7 @@ export const CloudflareScanner = () => {
           {scanSummary && <ScanSummaryCharts summary={scanSummary} />}
 
           {/* Results Tabs */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white">Scan Results</CardTitle>
               <CardDescription className="text-slate-400">
@@ -364,7 +239,7 @@ export const CloudflareScanner = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="dns" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-700/50">
+                <TabsList className="grid w-full grid-cols-3 bg-slate-700">
                   <TabsTrigger value="dns" className="data-[state=active]:bg-slate-600">
                     DNS Changes
                   </TabsTrigger>
@@ -397,7 +272,7 @@ export const CloudflareScanner = () => {
           {/* Quick Stats */}
           {scanSummary && (
             <div className="space-y-4">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -409,7 +284,7 @@ export const CloudflareScanner = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -421,7 +296,7 @@ export const CloudflareScanner = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <p className="text-slate-400 text-sm">Severity Breakdown</p>
@@ -433,7 +308,7 @@ export const CloudflareScanner = () => {
                             <div className={`w-2 h-2 rounded-full ${getSeverityColor(severity)}`} />
                             <span className="text-slate-300 capitalize text-sm">{severity}</span>
                           </div>
-                          <Badge variant="secondary" className="bg-slate-700/50 text-slate-300">
+                          <Badge variant="secondary" className="bg-slate-700 text-slate-300">
                             {count}
                           </Badge>
                         </div>

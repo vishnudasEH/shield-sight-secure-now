@@ -3,56 +3,67 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    /* Light theme (backup) */
-    --background: 255 255 255;
-    --foreground: 15 23 42;
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
-    --popover: 255 255 255;
-    --popover-foreground: 15 23 42;
-    --primary: 99 102 241;
-    --primary-foreground: 255 255 255;
-    --secondary: 241 245 249;
-    --secondary-foreground: 51 65 85;
-    --muted: 248 250 252;
-    --muted-foreground: 100 116 139;
-    --accent: 243 244 246;
-    --accent-foreground: 31 41 55;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 229 231 235;
-    --input: 229 231 235;
-    --ring: 99 102 241;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
     --radius: 0.5rem;
   }
 
-  /* Apply dark theme by default */
-  :root,
   .dark {
-    /* Dark theme colors */
-    --background: 9 9 11;
-    --foreground: 250 250 250;
-    --card: 24 24 27;
-    --card-foreground: 250 250 250;
-    --popover: 24 24 27;
-    --popover-foreground: 250 250 250;
-    --primary: 139 92 246;
-    --primary-foreground: 255 255 255;
-    --secondary: 39 39 42;
-    --secondary-foreground: 161 161 170;
-    --muted: 39 39 42;
-    --muted-foreground: 161 161 170;
-    --accent: 63 63 70;
-    --accent-foreground: 250 250 250;
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
-    --border: 63 63 70;
-    --input: 39 39 42;
-    --ring: 139 92 246;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -61,156 +72,95 @@
     @apply border-border;
   }
   
-  html {
-    @apply dark;
-  }
-  
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: rgb(9 9 11);
-    color: rgb(250 250 250);
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
 
-  /* Modern Scrollbar */
+  /* Light Blue Template Inspired Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgb(39 39 42);
+    @apply bg-gray-100;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgb(63 63 70);
-    border-radius: 3px;
+    @apply bg-gray-300 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(82 82 91);
+    @apply bg-gray-400;
   }
 }
 
 @layer components {
-  /* Modern Card Component */
-  .modern-card {
-    @apply bg-card border border-border rounded-lg shadow-sm;
-    background-color: rgb(24 24 27);
-    border-color: rgb(63 63 70);
+  /* Light Blue Template Card Style */
+  .light-blue-card {
+    @apply bg-white rounded-lg shadow-sm border-0 hover:shadow-md transition-all duration-200;
   }
 
-  /* Clean Button Styles */
+  /* Light Blue Template Button Styles */
   .btn-primary {
-    @apply bg-primary text-primary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-primary/90;
-    background-color: rgb(139 92 246);
-    color: rgb(255 255 255);
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-secondary/80;
-    background-color: rgb(39 39 42);
-    color: rgb(161 161 170);
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg transition-all duration-200;
   }
 
-  /* Clean Input Styles */
-  .input-field {
-    @apply bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
-    background-color: rgb(9 9 11);
-    border-color: rgb(63 63 70);
-    color: rgb(250 250 250);
+  /* Light Blue Template Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent;
   }
 
-  /* Navigation Styles */
+  /* Light Blue Template Stats Card */
+  .stats-card {
+    @apply bg-white rounded-xl p-6 shadow-sm border-0 hover:shadow-md transition-all duration-200;
+  }
+
+  /* Light Blue Template Navigation */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent;
-    color: rgb(161 161 170);
-  }
-
-  .nav-item:hover {
-    color: rgb(250 250 250);
-    background-color: rgb(63 63 70);
+    @apply flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 font-medium;
   }
 
   .nav-item-active {
-    @apply text-primary bg-primary/10;
-    color: rgb(139 92 246);
-    background-color: rgba(139, 92, 246, 0.1);
+    @apply bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-r-2 border-blue-500 shadow-sm;
   }
 
-  /* Stats Card */
-  .stats-card {
-    @apply modern-card p-6;
-  }
-
-  /* Badge Styles */
-  .badge-critical {
-    @apply bg-red-900/20 text-red-400 px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  .badge-high {
-    @apply bg-orange-900/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  .badge-medium {
-    @apply bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  .badge-low {
-    @apply bg-green-900/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  .badge-info {
-    @apply bg-blue-900/20 text-blue-400 px-2 py-1 rounded-full text-xs font-medium;
-  }
-
-  /* Page Headers */
-  .page-header {
-    @apply mb-6 pb-4 border-b border-border;
-    border-color: rgb(63 63 70);
-  }
-
-  .page-title {
-    @apply text-2xl font-bold mb-1 text-foreground;
-    color: rgb(250 250 250);
-  }
-
-  .page-subtitle {
-    @apply text-muted-foreground text-sm;
-    color: rgb(161 161 170);
+  /* Chart Styling */
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    @apply bg-white border border-gray-200 rounded-lg shadow-lg !important;
   }
 }
 
-/* Clean Animations */
+/* Animation for smooth transitions */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-scale {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
+/* Light Blue Template specific gradients */
+.gradient-blue-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.animate-fade-scale {
-  animation: fade-scale 0.3s ease-out;
+.gradient-orange-red {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.loading-spinner {
-  @apply inline-block w-4 h-4 border-2 border-muted border-t-primary rounded-full animate-spin;
-  border-color: rgb(161 161 170);
-  border-top-color: rgb(139 92 246);
+.gradient-green-teal {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
