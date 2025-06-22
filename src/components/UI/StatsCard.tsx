@@ -11,7 +11,6 @@ interface StatsCardProps {
   changeType?: "positive" | "negative" | "neutral";
   icon: LucideIcon;
   iconColor?: string;
-  gradient?: string;
   description?: string;
 }
 
@@ -21,25 +20,24 @@ export const StatsCard = ({
   change, 
   changeType = "neutral", 
   icon: Icon,
-  iconColor = "text-blue-400",
-  gradient = "from-blue-500 to-indigo-500",
+  iconColor = "text-primary",
   description
 }: StatsCardProps) => {
   const changeColors = {
-    positive: "text-green-400",
-    negative: "text-red-400", 
-    neutral: "text-slate-400"
+    positive: "text-green-600",
+    negative: "text-red-600", 
+    neutral: "text-muted-foreground"
   };
 
   return (
-    <Card className="stats-card animate-fade-scale group">
-      <CardContent className="p-6 relative">
+    <Card className="stats-card">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2 flex-1">
-            <p className="text-sm font-medium text-slate-400 uppercase tracking-wide">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
               {title}
             </p>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-foreground">
               {value}
             </p>
             {change && (
@@ -51,21 +49,21 @@ export const StatsCard = ({
               </p>
             )}
             {description && (
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-muted-foreground font-medium">
                 {description}
               </p>
             )}
           </div>
           
-          <div className="w-12 h-12 bg-slate-700/50 rounded-lg flex items-center justify-center">
-            <Icon className="h-6 w-6 text-blue-400" />
+          <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
+            <Icon className={cn("h-6 w-6", iconColor)} />
           </div>
         </div>
 
         {/* Simple Progress Indicator */}
-        <div className="mt-4 w-full bg-slate-700/30 rounded-full h-1">
+        <div className="mt-4 w-full bg-accent rounded-full h-2">
           <div 
-            className="h-1 rounded-full bg-blue-500 transition-all duration-1000"
+            className="h-2 rounded-full bg-primary transition-all duration-1000"
             style={{ width: `${Math.min(100, Math.abs(Number(value)) || 50)}%` }}
           />
         </div>
