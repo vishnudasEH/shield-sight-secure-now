@@ -3,11 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 250 250 252;
+    --background: 255 255 255;
     --foreground: 15 23 42;
 
     --card: 255 255 255;
@@ -35,7 +35,7 @@
     --input: 229 231 235;
     --ring: 99 102 241;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 
   .dark {
@@ -75,126 +75,100 @@
   }
   
   body {
-    @apply bg-background text-foreground font-outfit;
-    background: linear-gradient(135deg, #fafafa 0%, #f4f4f5 100%);
-    color: #0f172a;
-    min-height: 100vh;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  .dark body {
-    background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
-    color: #fafafa;
+  html.dark body {
+    @apply bg-zinc-900 text-zinc-100;
   }
 
   /* Modern Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(229, 231, 235, 0.3);
-    border-radius: 4px;
+    background: hsl(var(--muted));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    background: hsl(var(--border));
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  }
-
-  .dark ::-webkit-scrollbar-track {
-    background: rgba(39, 39, 42, 0.3);
+    background: hsl(var(--accent-foreground));
   }
 }
 
 @layer components {
   /* Modern Card Component */
   .modern-card {
-    @apply bg-card border border-border rounded-xl shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md;
+    @apply bg-card border border-border rounded-lg shadow-sm;
   }
 
   /* Clean Button Styles */
   .btn-primary {
-    @apply bg-primary text-primary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg;
+    @apply bg-primary text-primary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-primary/90;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-lg transition-all duration-200 hover:bg-secondary/80;
+    @apply bg-secondary text-secondary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-secondary/80;
   }
 
   /* Clean Input Styles */
   .input-field {
-    @apply bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+    @apply bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
   }
 
   /* Navigation Styles */
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground font-medium transition-all duration-200 hover:text-foreground hover:bg-accent/50;
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent;
   }
 
   .nav-item-active {
-    @apply text-primary bg-primary/10 border border-primary/20;
+    @apply text-primary bg-primary/10;
   }
 
   /* Stats Card */
   .stats-card {
-    @apply modern-card p-6 hover:scale-[1.02] transition-all duration-200;
+    @apply modern-card p-6;
   }
 
   /* Badge Styles */
   .badge-critical {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-high {
-    @apply bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-medium {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-low {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium;
+    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-info {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-3 py-1 rounded-full text-sm font-medium;
-  }
-
-  /* Table Styles */
-  .modern-table {
-    @apply modern-card overflow-hidden;
-  }
-
-  .modern-table th {
-    @apply bg-muted text-muted-foreground font-semibold px-6 py-4 text-left text-sm;
-  }
-
-  .modern-table td {
-    @apply px-6 py-4 border-t border-border text-foreground;
-  }
-
-  .modern-table tr:hover {
-    @apply bg-accent/30;
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   /* Page Headers */
   .page-header {
-    @apply mb-8 pb-6 border-b border-border;
+    @apply mb-6 pb-4 border-b border-border;
   }
 
   .page-title {
-    @apply text-3xl font-bold mb-2 text-foreground;
+    @apply text-2xl font-bold mb-1 text-foreground;
   }
 
   .page-subtitle {
-    @apply text-muted-foreground text-base;
+    @apply text-muted-foreground text-sm;
   }
 }
 
@@ -204,32 +178,10 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-
-.animate-fade-scale {
-  animation: scaleIn 0.3s ease-out;
-}
-
-.animate-slide-up {
-  animation: fadeIn 0.4s ease-out;
-}
-
 .loading-spinner {
-  @apply inline-block w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin;
+  @apply inline-block w-4 h-4 border-2 border-muted border-t-primary rounded-full animate-spin;
 }

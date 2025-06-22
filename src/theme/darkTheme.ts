@@ -1,50 +1,46 @@
 
 export const modernTheme = {
   colors: {
-    // Clean modern backgrounds
-    background: '#fafafa',
-    foregroun: '#0f172a',
-    card: '#ffffff',
-    muted: '#f8fafc',
+    // Dark theme backgrounds
+    background: '#09090b',
+    foreground: '#fafafa',
+    card: '#18181b',
+    muted: '#27272a',
     
-    // Primary color palette
-    primary: '#6366f1',
+    // Primary color palette - Purple theme
+    primary: '#8b5cf6',
     primaryForeground: '#ffffff',
-    secondary: '#f1f5f9',
-    secondaryForeground: '#334155',
-    accent: '#f3f4f6',
-    accentForeground: '#1f2937',
+    secondary: '#27272a',
+    secondaryForeground: '#a1a1aa',
+    accent: '#3f3f46',
+    accentForeground: '#fafafa',
     
     // Status colors
-    success: '#10b981',
-    successGradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    success: '#22c55e',
     warning: '#f59e0b',
-    warningGradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
     danger: '#ef4444',
-    dangerGradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     info: '#3b82f6',
-    infoGradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
     
     // Text colors
-    textPrimary: '#0f172a',
-    textSecondary: '#64748b',
-    textMuted: '#94a3b8',
-    textDisabled: '#cbd5e1',
+    textPrimary: '#fafafa',
+    textSecondary: '#a1a1aa',
+    textMuted: '#71717a',
+    textDisabled: '#52525b',
     
     // Border and divider colors
-    border: '#e5e7eb',
-    divider: '#f3f4f6',
+    border: '#3f3f46',
+    divider: '#27272a',
     
     // Chart colors palette
     chart: {
-      primary: '#6366f1',
-      secondary: '#8b5cf6',
-      success: '#10b981',
+      primary: '#8b5cf6',
+      secondary: '#06b6d4',
+      success: '#22c55e',
       warning: '#f59e0b',
       danger: '#ef4444',
       info: '#3b82f6',
-      light: '#f8fafc',
-      dark: '#1e293b',
+      light: '#fafafa',
+      dark: '#18181b',
     }
   },
   
@@ -73,7 +69,7 @@ export const modernTheme = {
   },
   
   typography: {
-    fontFamily: 'Outfit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSizes: {
       xs: '0.75rem',
       sm: '0.875rem',
