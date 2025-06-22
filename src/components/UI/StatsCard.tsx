@@ -21,8 +21,8 @@ export const StatsCard = ({
   change, 
   changeType = "neutral", 
   icon: Icon,
-  iconColor = "text-indigo-400",
-  gradient = "from-indigo-500 to-purple-600",
+  iconColor = "text-blue-400",
+  gradient = "from-blue-500 to-indigo-500",
   description
 }: StatsCardProps) => {
   const changeColors = {
@@ -33,56 +33,42 @@ export const StatsCard = ({
 
   return (
     <Card className="stats-card animate-fade-scale group">
-      <CardContent className="p-8 relative">
-        {/* Background Pattern */}
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-          <Icon className="w-full h-full" />
-        </div>
-
-        <div className="flex items-center justify-between relative z-10">
-          <div className="space-y-3 flex-1">
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+      <CardContent className="p-6 relative">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2 flex-1">
+            <p className="text-sm font-medium text-slate-400 uppercase tracking-wide">
               {title}
             </p>
-            <p className="text-4xl font-bold text-white group-hover:text-indigo-300 transition-colors duration-300">
+            <p className="text-3xl font-bold text-white">
               {value}
             </p>
             {change && (
               <p className={cn(
-                "text-sm font-semibold flex items-center space-x-2",
+                "text-sm font-medium",
                 changeColors[changeType]
               )}>
-                <span>{change}</span>
+                {change}
               </p>
             )}
             {description && (
-              <p className="text-xs text-slate-500 mt-2 font-medium">
+              <p className="text-xs text-slate-500 font-medium">
                 {description}
               </p>
             )}
           </div>
           
-          <div className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-xl group-hover:shadow-2xl transition-all duration-500 group-hover:scale-110 relative overflow-hidden",
-            gradient
-          )}>
-            <Icon className="h-8 w-8 text-white relative z-10" />
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+          <div className="w-12 h-12 bg-slate-700/50 rounded-lg flex items-center justify-center">
+            <Icon className="h-6 w-6 text-blue-400" />
           </div>
         </div>
 
-        {/* Enhanced Progress Bar */}
-        <div className="mt-6 w-full bg-slate-700/30 rounded-full h-2 overflow-hidden">
+        {/* Simple Progress Indicator */}
+        <div className="mt-4 w-full bg-slate-700/30 rounded-full h-1">
           <div 
-            className={cn("h-2 rounded-full bg-gradient-to-r transition-all duration-1000 relative overflow-hidden", gradient)}
+            className="h-1 rounded-full bg-blue-500 transition-all duration-1000"
             style={{ width: `${Math.min(100, Math.abs(Number(value)) || 50)}%` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-          </div>
+          />
         </div>
-
-        {/* Subtle Glow Effect */}
-        <div className={cn("absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 bg-gradient-to-br", gradient)}></div>
       </CardContent>
     </Card>
   );
