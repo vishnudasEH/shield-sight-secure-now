@@ -7,63 +7,50 @@
 
 @layer base {
   :root {
+    /* Light theme (backup) */
     --background: 255 255 255;
     --foreground: 15 23 42;
-
     --card: 255 255 255;
     --card-foreground: 15 23 42;
-
     --popover: 255 255 255;
     --popover-foreground: 15 23 42;
-
     --primary: 99 102 241;
     --primary-foreground: 255 255 255;
-
     --secondary: 241 245 249;
     --secondary-foreground: 51 65 85;
-
     --muted: 248 250 252;
     --muted-foreground: 100 116 139;
-
     --accent: 243 244 246;
     --accent-foreground: 31 41 55;
-
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
-
     --border: 229 231 235;
     --input: 229 231 235;
     --ring: 99 102 241;
-
     --radius: 0.5rem;
   }
 
+  /* Apply dark theme by default */
+  :root,
   .dark {
+    /* Dark theme colors */
     --background: 9 9 11;
     --foreground: 250 250 250;
-
     --card: 24 24 27;
     --card-foreground: 250 250 250;
-
     --popover: 24 24 27;
     --popover-foreground: 250 250 250;
-
     --primary: 139 92 246;
     --primary-foreground: 255 255 255;
-
     --secondary: 39 39 42;
     --secondary-foreground: 161 161 170;
-
     --muted: 39 39 42;
     --muted-foreground: 161 161 170;
-
-    --accent: 39 39 42;
+    --accent: 63 63 70;
     --accent-foreground: 250 250 250;
-
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
-
-    --border: 39 39 42;
+    --border: 63 63 70;
     --input: 39 39 42;
     --ring: 139 92 246;
   }
@@ -74,13 +61,15 @@
     @apply border-border;
   }
   
+  html {
+    @apply dark;
+  }
+  
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-
-  html.dark body {
-    @apply bg-zinc-900 text-zinc-100;
+    background-color: rgb(9 9 11);
+    color: rgb(250 250 250);
   }
 
   /* Modern Scrollbar */
@@ -90,16 +79,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--muted));
+    background: rgb(39 39 42);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: rgb(63 63 70);
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--accent-foreground));
+    background: rgb(82 82 91);
   }
 }
 
@@ -107,29 +96,46 @@
   /* Modern Card Component */
   .modern-card {
     @apply bg-card border border-border rounded-lg shadow-sm;
+    background-color: rgb(24 24 27);
+    border-color: rgb(63 63 70);
   }
 
   /* Clean Button Styles */
   .btn-primary {
     @apply bg-primary text-primary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-primary/90;
+    background-color: rgb(139 92 246);
+    color: rgb(255 255 255);
   }
 
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground font-medium px-4 py-2 rounded-md transition-colors hover:bg-secondary/80;
+    background-color: rgb(39 39 42);
+    color: rgb(161 161 170);
   }
 
   /* Clean Input Styles */
   .input-field {
     @apply bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+    background-color: rgb(9 9 11);
+    border-color: rgb(63 63 70);
+    color: rgb(250 250 250);
   }
 
   /* Navigation Styles */
   .nav-item {
     @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-accent;
+    color: rgb(161 161 170);
+  }
+
+  .nav-item:hover {
+    color: rgb(250 250 250);
+    background-color: rgb(63 63 70);
   }
 
   .nav-item-active {
     @apply text-primary bg-primary/10;
+    color: rgb(139 92 246);
+    background-color: rgba(139, 92, 246, 0.1);
   }
 
   /* Stats Card */
@@ -139,36 +145,39 @@
 
   /* Badge Styles */
   .badge-critical {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded-full text-xs font-medium;
+    @apply bg-red-900/20 text-red-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-high {
-    @apply bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-full text-xs font-medium;
+    @apply bg-orange-900/20 text-orange-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-medium {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 px-2 py-1 rounded-full text-xs font-medium;
+    @apply bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-low {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium;
+    @apply bg-green-900/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-info {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded-full text-xs font-medium;
+    @apply bg-blue-900/20 text-blue-400 px-2 py-1 rounded-full text-xs font-medium;
   }
 
   /* Page Headers */
   .page-header {
     @apply mb-6 pb-4 border-b border-border;
+    border-color: rgb(63 63 70);
   }
 
   .page-title {
     @apply text-2xl font-bold mb-1 text-foreground;
+    color: rgb(250 250 250);
   }
 
   .page-subtitle {
     @apply text-muted-foreground text-sm;
+    color: rgb(161 161 170);
   }
 }
 
@@ -178,10 +187,30 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-fade-scale {
+  animation: fade-scale 0.3s ease-out;
+}
+
 .loading-spinner {
   @apply inline-block w-4 h-4 border-2 border-muted border-t-primary rounded-full animate-spin;
+  border-color: rgb(161 161 170);
+  border-top-color: rgb(139 92 246);
 }
