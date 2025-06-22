@@ -11,6 +11,7 @@ interface StatsCardProps {
   changeType?: "positive" | "negative" | "neutral";
   icon: LucideIcon;
   iconColor?: string;
+  gradient?: string;
   description?: string;
 }
 
@@ -21,6 +22,7 @@ export const StatsCard = ({
   changeType = "neutral", 
   icon: Icon,
   iconColor = "text-primary",
+  gradient,
   description
 }: StatsCardProps) => {
   const changeColors = {
@@ -55,7 +57,10 @@ export const StatsCard = ({
             )}
           </div>
           
-          <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
+          <div className={cn(
+            "w-12 h-12 rounded-lg flex items-center justify-center",
+            gradient ? "" : "bg-accent"
+          )} style={gradient ? { background: gradient } : {}}>
             <Icon className={cn("h-6 w-6", iconColor)} />
           </div>
         </div>

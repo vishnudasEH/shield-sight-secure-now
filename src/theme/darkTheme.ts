@@ -95,4 +95,7 @@ export const modernTheme = {
   },
 };
 
+// Export darkTheme as an alias to modernTheme for compatibility
+export const darkTheme = modernTheme;
+
 export type ModernTheme = typeof modernTheme;
