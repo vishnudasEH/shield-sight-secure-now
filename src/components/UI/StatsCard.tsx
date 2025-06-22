@@ -32,7 +32,7 @@ export const StatsCard = ({
   };
 
   return (
-    <Card className="stats-card animate-fade-scale">
+    <Card className="stats-card animate-fade-scale group">
       <CardContent className="p-8 relative">
         {/* Background Pattern */}
         <div className="absolute top-0 right-0 w-32 h-32 opacity-5">

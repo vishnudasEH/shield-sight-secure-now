@@ -107,7 +107,7 @@
 
   /* Navigation Styles */
   .nav-item {
-    @apply relative flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-300 font-medium transition-all duration-300 group hover:text-white;
+    @apply relative flex items-center gap-3 px-6 py-4 rounded-2xl text-slate-300 font-medium transition-all duration-300 hover:text-white;
   }
 
   .nav-item::before {
@@ -130,12 +130,16 @@
 
   /* Stats Card */
   .stats-card {
-    @apply glass-card p-6 hover:scale-105 transition-all duration-500 group overflow-hidden relative;
+    @apply glass-card p-6 hover:scale-105 transition-all duration-500 overflow-hidden relative;
   }
 
   .stats-card::before {
     content: '';
-    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500;
+    @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform scale-x-0 transition-transform duration-500;
+  }
+
+  .stats-card:hover::before {
+    @apply scale-x-100;
   }
 
   /* Badge Styles */
