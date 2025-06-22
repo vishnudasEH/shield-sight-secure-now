@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Mail, Lock, User } from 'lucide-react';
+import { Shield, Mail, Lock, User, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -51,7 +50,6 @@ export const AuthPage = () => {
       }
 
       if (data.user) {
-        // Check if user profile exists and is approved
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -111,14 +109,13 @@ export const AuthPage = () => {
     setLoading(true);
 
     try {
-      // First, create a signup request
       const { error: requestError } = await supabase
         .from('signup_requests')
         .insert({
           email: signupForm.email,
           first_name: signupForm.firstName,
           last_name: signupForm.lastName,
-          password_hash: signupForm.password, // In production, this should be hashed
+          password_hash: signupForm.password,
         });
 
       if (requestError) {
@@ -143,7 +140,6 @@ export const AuthPage = () => {
         description: "Your signup request has been submitted for admin approval. You will receive an email once approved.",
       });
 
-      // Reset form
       setSignupForm({
         email: '',
         password: '',
@@ -198,139 +194,156 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Enhanced Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}}></div>
+      </div>
+
+      <div className="w-full max-w-lg relative z-10">
+        <div className="text-center mb-10 animate-slide-up">
+          <div className="relative inline-block mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl animate-float">
+              <Shield className="h-10 w-10 text-white" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-3xl blur-xl opacity-30 animate-glow"></div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></div>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent mb-2">
             VulnTracker
           </h1>
-          <p className="text-slate-400">Security Platform</p>
+          <p className="text-slate-400 text-lg font-medium">Advanced Security Platform</p>
         </div>
 
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white text-center">Welcome</CardTitle>
-            <CardDescription className="text-slate-400 text-center">
+        <Card className="glass-card animate-fade-scale">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="text-2xl font-bold text-white flex items-center justify-center gap-3">
+              <Zap className="h-6 w-6 text-indigo-400" />
+              Welcome
+            </CardTitle>
+            <CardDescription className="text-slate-400 text-lg">
               Sign in to your account or request access
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-700">
-                <TabsTrigger value="login" className="text-slate-300">Login</TabsTrigger>
-                <TabsTrigger value="signup" className="text-slate-300">Sign Up</TabsTrigger>
-                <TabsTrigger value="forgot" className="text-slate-300">Reset</TabsTrigger>
+          <CardContent className="p-8">
+            <Tabs defaultValue="login" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 backdrop-blur-sm rounded-xl p-1">
+                <TabsTrigger value="login" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 rounded-lg transition-all duration-300">Login</TabsTrigger>
+                <TabsTrigger value="signup" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 rounded-lg transition-all duration-300">Sign Up</TabsTrigger>
+                <TabsTrigger value="forgot" className="text-slate-300 data-[state=active]:text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 rounded-lg transition-all duration-300">Reset</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-6">
                   <div>
-                    <Label htmlFor="email" className="text-slate-300">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Label htmlFor="email" className="text-slate-300 font-semibold">Email</Label>
+                    <div className="relative mt-2">
+                      <Mail className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                       <Input
                         id="email"
                         type="email"
                         value={loginForm.email}
                         onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                        className="pl-10 bg-slate-700 border-slate-600 text-white"
+                        className="pl-12 input-modern h-12 text-lg"
                         placeholder="Enter your email"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="password" className="text-slate-300">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Label htmlFor="password" className="text-slate-300 font-semibold">Password</Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                       <Input
                         id="password"
                         type="password"
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                        className="pl-10 bg-slate-700 border-slate-600 text-white"
+                        className="pl-12 input-modern h-12 text-lg"
                         placeholder="Enter your password"
                         required
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                    {loading ? 'Signing in...' : 'Sign In'}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-primary h-12 text-lg font-semibold"
+                  >
+                    {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  <div className="text-center text-sm text-slate-400">
-                    <p>Demo admin account:</p>
-                    <p>Email: </p>
-                    <p>Password: </p>
-                  </div>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
+                <form onSubmit={handleSignup} className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                      <Label htmlFor="firstName" className="text-slate-300 font-semibold">First Name</Label>
+                      <div className="relative mt-2">
+                        <User className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                         <Input
                           id="firstName"
                           type="text"
                           value={signupForm.firstName}
                           onChange={(e) => setSignupForm({ ...signupForm, firstName: e.target.value })}
-                          className="pl-10 bg-slate-700 border-slate-600 text-white"
+                          className="pl-12 input-modern h-12 text-lg"
                           placeholder="First name"
                           required
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="lastName" className="text-slate-300">Last Name</Label>
+                      <Label htmlFor="lastName" className="text-slate-300 font-semibold">Last Name</Label>
                       <Input
                         id="lastName"
                         type="text"
                         value={signupForm.lastName}
                         onChange={(e) => setSignupForm({ ...signupForm, lastName: e.target.value })}
-                        className="bg-slate-700 border-slate-600 text-white"
+                        className="input-modern h-12 text-lg"
                         placeholder="Last name"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="signupEmail" className="text-slate-300">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Label htmlFor="signupEmail" className="text-slate-300 font-semibold">Email</Label>
+                    <div className="relative mt-2">
+                      <Mail className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                       <Input
                         id="signupEmail"
                         type="email"
                         value={signupForm.email}
                         onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
-                        className="pl-10 bg-slate-700 border-slate-600 text-white"
+                        className="pl-12 input-modern h-12 text-lg"
                         placeholder="Enter your email"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="signupPassword" className="text-slate-300">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Label htmlFor="signupPassword" className="text-slate-300 font-semibold">Password</Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                       <Input
                         id="signupPassword"
                         type="password"
                         value={signupForm.password}
                         onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                        className="pl-10 bg-slate-700 border-slate-600 text-white"
+                        className="pl-12 input-modern h-12 text-lg"
                         placeholder="Create a password"
                         required
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-                    {loading ? 'Submitting...' : 'Request Access'}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-primary h-12 text-lg font-semibold"
+                  >
+                    Request Access
                   </Button>
                   <p className="text-xs text-slate-400 text-center">
                     Your request will be reviewed by an administrator
@@ -339,24 +352,28 @@ export const AuthPage = () => {
               </TabsContent>
 
               <TabsContent value="forgot">
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+                <form onSubmit={handleForgotPassword} className="space-y-6">
                   <div>
-                    <Label htmlFor="resetEmail" className="text-slate-300">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Label htmlFor="resetEmail" className="text-slate-300 font-semibold">Email</Label>
+                    <div className="relative mt-2">
+                      <Mail className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
                       <Input
                         id="resetEmail"
                         type="email"
                         value={forgotPasswordForm.email}
                         onChange={(e) => setForgotPasswordForm({ ...forgotPasswordForm, email: e.target.value })}
-                        className="pl-10 bg-slate-700 border-slate-600 text-white"
+                        className="pl-12 input-modern h-12 text-lg"
                         placeholder="Enter your email"
                         required
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={loading}>
-                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-primary h-12 text-lg font-semibold"
+                  >
+                    Send Reset Link
                   </Button>
                 </form>
               </TabsContent>
