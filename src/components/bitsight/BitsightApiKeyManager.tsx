@@ -28,7 +28,7 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
       
       // Test the API key with a real Bitsight API endpoint
       // Using the companies endpoint as it's typically available for basic validation
-      const response = await fetch('https://api.bitsighttech.com/ratings/v1/companies', {
+      const response = await fetch('https://api.bitsighttech.com/companies', {
         method: 'GET',
         headers: {
           'Authorization': `Token ${apiKey}`,
