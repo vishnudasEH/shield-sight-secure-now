@@ -12,6 +12,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { AssetsPage } from "@/components/AssetsPage";
 import { RiskManagement } from "@/components/RiskManagement";
 import { CloudflareScanner } from "@/components/CloudflareScanner";
+import BitsightDashboard from "@/pages/BitsightDashboard";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
