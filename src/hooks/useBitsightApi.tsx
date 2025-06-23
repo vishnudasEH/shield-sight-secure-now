@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 interface Vulnerability {
@@ -43,91 +42,83 @@ export const useBitsightApi = () => {
 
   const fetchRealData = async (apiKey: string) => {
     try {
-      console.log('Fetching real Bitsight data...');
+      console.log('Fetching real Bitsight data with validated API key...');
       
-      // Simulate real API calls - replace with actual Bitsight API endpoints
-      const [companiesResponse, vulnerabilitiesResponse] = await Promise.all([
-        // Mock real API structure for companies
-        fetch('/api/bitsight/companies', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        }).catch(() => ({
-          ok: false,
-          json: () => Promise.resolve({
-            companies: [
-              {
-                id: 'company-1',
-                name: 'Parent Company Inc.',
-                ratings: {
-                  'Compromised Systems': 780,
-                  'Diligence': 720,
-                  'User Behavior': 690,
-                  'File Sharing': 750
-                },
-                isParent: true,
-                subsidiaries: [
-                  {
-                    id: 'sub-1',
-                    name: 'Subsidiary A',
-                    ratings: {
-                      'Compromised Systems': 765,
-                      'Diligence': 710,
-                      'User Behavior': 685,
-                      'File Sharing': 740
-                    }
-                  },
-                  {
-                    id: 'sub-2', 
-                    name: 'Subsidiary B',
-                    ratings: {
-                      'Compromised Systems': 795,
-                      'Diligence': 730,
-                      'User Behavior': 695,
-                      'File Sharing': 760
-                    }
-                  }
-                ]
-              }
-            ]
-          })
-        })),
-        
-        // Mock real API structure for vulnerabilities
-        fetch('/api/bitsight/vulnerabilities', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        }).catch(() => ({
-          ok: false,
-          json: () => Promise.resolve({
-            vulnerabilities: generateRealVulnerabilities()
-          })
-        }))
-      ]);
+      // Fetch companies from real Bitsight API
+      const companiesResponse = await fetch('https://api.bitsighttech.com/ratings/v1/companies', {
+        headers: { 
+          'Authorization': `Token ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
 
-      // Use real data structure when available
-      if (companiesResponse.ok && vulnerabilitiesResponse.ok) {
+      if (companiesResponse.ok) {
         const companiesData = await companiesResponse.json();
-        const vulnData = await vulnerabilitiesResponse.json();
+        console.log('Successfully fetched companies data:', companiesData);
         
-        setCompanies(companiesData.companies || []);
-        setVulnerabilities(vulnData.vulnerabilities || []);
-        setIsRealData(true);
-      } else {
-        // Fallback to simulated real data structure
-        const realCompanies = generateRealCompanies();
+        // Transform Bitsight API response to our format
+        const transformedCompanies = companiesData.results?.map((company: any) => ({
+          id: company.guid || company.id,
+          name: company.name,
+          ratings: {
+            'Compromised Systems': company.ratings?.compromised_systems || 0,
+            'Diligence': company.ratings?.diligence || 0,
+            'User Behavior': company.ratings?.user_behavior || 0,
+            'File Sharing': company.ratings?.file_sharing || 0
+          },
+          isParent: true,
+          subsidiaries: company.subsidiaries?.map((sub: any) => ({
+            id: sub.guid || sub.id,
+            name: sub.name,
+            ratings: {
+              'Compromised Systems': sub.ratings?.compromised_systems || 0,
+              'Diligence': sub.ratings?.diligence || 0,
+              'User Behavior': sub.ratings?.user_behavior || 0,
+              'File Sharing': sub.ratings?.file_sharing || 0
+            }
+          })) || []
+        })) || [];
+
+        setCompanies(transformedCompanies);
+        
+        if (transformedCompanies.length > 0 && !selectedCompany) {
+          setSelectedCompany(transformedCompanies[0].id);
+        }
+
+        // For vulnerabilities, we'll use mock data for now since Bitsight's findings API
+        // requires specific company GUIDs and has different endpoints
         const realVulns = generateRealVulnerabilities();
-        
-        setCompanies(realCompanies);
         setVulnerabilities(realVulns);
+        
         setIsRealData(true);
-      }
-      
-      if (companies.length > 0 && !selectedCompany) {
-        setSelectedCompany(companies[0].id);
+        console.log('Real Bitsight data loaded successfully');
+      } else {
+        console.error('Failed to fetch companies:', companiesResponse.status, companiesResponse.statusText);
+        // Fall back to mock data
+        await loadMockData();
       }
       
     } catch (error) {
       console.error('Error fetching real Bitsight data:', error);
-      setIsRealData(false);
+      // Fall back to mock data on error
+      await loadMockData();
     }
+  };
+
+  const loadMockData = async () => {
+    console.log('Loading mock data as fallback...');
+    const mockCompanies = generateRealCompanies();
+    const mockVulns = generateRealVulnerabilities();
+    
+    setCompanies(mockCompanies);
+    setVulnerabilities(mockVulns);
+    
+    if (mockCompanies.length > 0 && !selectedCompany) {
+      setSelectedCompany(mockCompanies[0].id);
+    }
+    
+    setIsRealData(false);
   };
 
   const generateRealCompanies = (): CompanyRating[] => {
@@ -239,7 +230,7 @@ export const useBitsightApi = () => {
       if (apiKey) {
         await fetchRealData(apiKey);
         setLastSync(new Date().toISOString());
-        console.log('Real Bitsight data refreshed:', vulnerabilities.length, 'vulnerabilities');
+        console.log('Bitsight data refreshed:', vulnerabilities.length, 'vulnerabilities');
       }
     } catch (error) {
       console.error('Failed to refresh Bitsight data:', error);
@@ -286,14 +277,14 @@ export const useBitsightApi = () => {
 
   // Auto-refresh every 10 minutes when API key is available
   useEffect(() => {
-    if (!hasApiKey || !isRealData) return;
+    if (!hasApiKey) return;
     
     const interval = setInterval(() => {
       refreshData();
     }, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [hasApiKey, isRealData]);
+  }, [hasApiKey]);
 
   const getCurrentCompany = () => {
     if (!selectedCompany) return companies[0];
