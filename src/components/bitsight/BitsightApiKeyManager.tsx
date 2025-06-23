@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Key, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BitsightApiKeyManagerProps {
   onApiKeyValidated: (key: string) => void;
@@ -24,43 +24,36 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
     setErrorMessage("");
 
     try {
-      console.log('Validating API key against Bitsight API...');
+      console.log('Validating API key via backend proxy...');
       
-      // Test the API key with a real Bitsight API endpoint
-      // Using the companies endpoint as it's typically available for basic validation
-      const response = await fetch('https://api.bitsighttech.com/companies', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${apiKey}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+      // Call our backend proxy endpoint instead of Bitsight API directly
+      const { data, error } = await supabase.functions.invoke('validate-bitsight-key', {
+        body: { apiKey: apiKey.trim() }
       });
 
-      console.log('API Response status:', response.status);
+      if (error) {
+        console.error('Supabase function error:', error);
+        setValidationResult('network_error');
+        setErrorMessage('Failed to connect to validation service. Please try again.');
+        return;
+      }
 
-      if (response.ok) {
+      console.log('Backend validation response:', data);
+
+      if (data.success) {
         setValidationResult('success');
         localStorage.setItem('bitsight_api_key', apiKey);
-        console.log('API key validated successfully!');
+        console.log('API key validated successfully via backend!');
         setTimeout(() => onApiKeyValidated(apiKey), 1000);
-      } else if (response.status === 401) {
-        setValidationResult('error');
-        setErrorMessage('Invalid API key. Please check your token and try again.');
-        console.log('API key validation failed: Unauthorized');
-      } else if (response.status === 403) {
-        setValidationResult('error');
-        setErrorMessage('API key lacks required permissions. Please check your access level.');
-        console.log('API key validation failed: Forbidden');
       } else {
         setValidationResult('error');
-        setErrorMessage(`API validation failed with status ${response.status}. Please try again.`);
-        console.log('API key validation failed with status:', response.status);
+        setErrorMessage(data.error || 'Unknown validation error occurred.');
+        console.log('API key validation failed:', data.error);
       }
     } catch (error) {
-      console.error('Network error during API validation:', error);
+      console.error('Unexpected error during API validation:', error);
       setValidationResult('network_error');
-      setErrorMessage('Network error. Please check your connection and try again.');
+      setErrorMessage('Unexpected error occurred. Please try again.');
     } finally {
       setIsValidating(false);
     }
@@ -158,7 +151,7 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
 
         <div className="bg-gray-900/30 rounded-lg p-3 border border-gray-700 space-y-2">
           <p className="text-xs text-gray-400">
-            Your API key is stored securely in your browser's local storage and is only used to authenticate with Bitsight's API.
+            Your API key is validated securely through our backend service and stored locally in your browser.
           </p>
           <p className="text-xs text-blue-400">
             Need an API key? Visit your{' '}
