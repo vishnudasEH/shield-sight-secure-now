@@ -15,6 +15,13 @@ import { CloudflareScanner } from "@/components/CloudflareScanner";
 import BitsightDashboard from "@/pages/BitsightDashboard";
 import { useAuth } from "@/hooks/useAuth";
 
+// Custom Bitsight icon SVG component
+const BitsightIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+);
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,6 +31,7 @@ const Index = () => {
     { id: "dashboard", label: "Dashboard", icon: Shield },
     { id: "scanner", label: "Scanner", icon: Scan },
     { id: "cloudflare", label: "Cloudflare Scanner", icon: Search },
+    { id: "bitsight", label: "Bitsight", icon: BitsightIcon },
     { id: "vulnerabilities", label: "Vulnerabilities", icon: AlertTriangle },
     { id: "assets", label: "Assets", icon: Server },
     { id: "risk", label: "Risk Management", icon: Target },
@@ -34,7 +42,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-950 to-black relative">
-      {/* Sophisticated Background Pattern */}
+      {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900/20 via-transparent to-transparent"></div>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
@@ -166,6 +174,12 @@ const Index = () => {
               {activeTab === "cloudflare" && (
                 <div className="space-y-6">
                   <CloudflareScanner />
+                </div>
+              )}
+
+              {activeTab === "bitsight" && (
+                <div className="space-y-6">
+                  <BitsightDashboard />
                 </div>
               )}
 
