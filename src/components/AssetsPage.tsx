@@ -59,6 +59,8 @@ export const AssetsPage = () => {
     endIndex,
     itemsPerPage,
     goToPage,
+    nextPage,
+    prevPage,
     hasNext,
     hasPrev
   } = usePagination({ data: filteredAssets, itemsPerPage: 100 });
@@ -204,6 +206,8 @@ export const AssetsPage = () => {
               endIndex={endIndex}
               itemsPerPage={itemsPerPage}
               onPageChange={goToPage}
+              onNext={nextPage}
+              onPrev={prevPage}
               hasNext={hasNext}
               hasPrev={hasPrev}
             />
@@ -304,6 +308,8 @@ export const AssetsPage = () => {
               endIndex={endIndex}
               itemsPerPage={itemsPerPage}
               onPageChange={goToPage}
+              onNext={nextPage}
+              onPrev={prevPage}
               hasNext={hasNext}
               hasPrev={hasPrev}
             />

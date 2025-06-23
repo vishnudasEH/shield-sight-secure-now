@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,8 @@ export const AssetVulnerabilities = ({ assetHost, onClose }: AssetVulnerabilitie
     endIndex,
     itemsPerPage,
     goToPage,
+    nextPage,
+    prevPage,
     hasNext,
     hasPrev
   } = usePagination({ data: vulnerabilities, itemsPerPage: 50 });
@@ -113,6 +114,8 @@ export const AssetVulnerabilities = ({ assetHost, onClose }: AssetVulnerabilitie
           endIndex={endIndex}
           itemsPerPage={itemsPerPage}
           onPageChange={goToPage}
+          onNext={nextPage}
+          onPrev={prevPage}
           hasNext={hasNext}
           hasPrev={hasPrev}
         />
@@ -162,6 +165,8 @@ export const AssetVulnerabilities = ({ assetHost, onClose }: AssetVulnerabilitie
           endIndex={endIndex}
           itemsPerPage={itemsPerPage}
           onPageChange={goToPage}
+          onNext={nextPage}
+          onPrev={prevPage}
           hasNext={hasNext}
           hasPrev={hasPrev}
         />

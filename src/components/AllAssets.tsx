@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,6 +178,8 @@ export const AllAssets = () => {
     endIndex,
     itemsPerPage,
     goToPage,
+    nextPage,
+    prevPage,
     hasNext,
     hasPrev
   } = usePagination({ data: sortedAssets, itemsPerPage: 50 });
@@ -280,6 +281,8 @@ export const AllAssets = () => {
           endIndex={endIndex}
           itemsPerPage={itemsPerPage}
           onPageChange={goToPage}
+          onNext={nextPage}
+          onPrev={prevPage}
           hasNext={hasNext}
           hasPrev={hasPrev}
         />
@@ -466,6 +469,8 @@ export const AllAssets = () => {
           endIndex={endIndex}
           itemsPerPage={itemsPerPage}
           onPageChange={goToPage}
+          onNext={nextPage}
+          onPrev={prevPage}
           hasNext={hasNext}
           hasPrev={hasPrev}
         />
