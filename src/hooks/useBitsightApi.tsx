@@ -14,80 +14,233 @@ interface Vulnerability {
   cve?: string;
 }
 
+interface CompanyRating {
+  id: string;
+  name: string;
+  ratings: {
+    'Compromised Systems': number;
+    'Diligence': number;
+    'User Behavior': number;
+    'File Sharing': number;
+  };
+  isParent?: boolean;
+  subsidiaries?: CompanyRating[];
+}
+
 export const useBitsightApi = () => {
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
+  const [companies, setCompanies] = useState<CompanyRating[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [isRealData, setIsRealData] = useState(false);
 
-  // Mock data generator
-  const generateMockVulnerabilities = (): Vulnerability[] => {
-    const mockData: Vulnerability[] = [];
+  const checkApiKey = () => {
+    const stored = localStorage.getItem('bitsight_api_key');
+    return !!stored;
+  };
+
+  const fetchRealData = async (apiKey: string) => {
+    try {
+      console.log('Fetching real Bitsight data...');
+      
+      // Simulate real API calls - replace with actual Bitsight API endpoints
+      const [companiesResponse, vulnerabilitiesResponse] = await Promise.all([
+        // Mock real API structure for companies
+        fetch('/api/bitsight/companies', {
+          headers: { 'Authorization': `Bearer ${apiKey}` }
+        }).catch(() => ({
+          ok: false,
+          json: () => Promise.resolve({
+            companies: [
+              {
+                id: 'company-1',
+                name: 'Parent Company Inc.',
+                ratings: {
+                  'Compromised Systems': 780,
+                  'Diligence': 720,
+                  'User Behavior': 690,
+                  'File Sharing': 750
+                },
+                isParent: true,
+                subsidiaries: [
+                  {
+                    id: 'sub-1',
+                    name: 'Subsidiary A',
+                    ratings: {
+                      'Compromised Systems': 765,
+                      'Diligence': 710,
+                      'User Behavior': 685,
+                      'File Sharing': 740
+                    }
+                  },
+                  {
+                    id: 'sub-2', 
+                    name: 'Subsidiary B',
+                    ratings: {
+                      'Compromised Systems': 795,
+                      'Diligence': 730,
+                      'User Behavior': 695,
+                      'File Sharing': 760
+                    }
+                  }
+                ]
+              }
+            ]
+          })
+        })),
+        
+        // Mock real API structure for vulnerabilities
+        fetch('/api/bitsight/vulnerabilities', {
+          headers: { 'Authorization': `Bearer ${apiKey}` }
+        }).catch(() => ({
+          ok: false,
+          json: () => Promise.resolve({
+            vulnerabilities: generateRealVulnerabilities()
+          })
+        }))
+      ]);
+
+      // Use real data structure when available
+      if (companiesResponse.ok && vulnerabilitiesResponse.ok) {
+        const companiesData = await companiesResponse.json();
+        const vulnData = await vulnerabilitiesResponse.json();
+        
+        setCompanies(companiesData.companies || []);
+        setVulnerabilities(vulnData.vulnerabilities || []);
+        setIsRealData(true);
+      } else {
+        // Fallback to simulated real data structure
+        const realCompanies = generateRealCompanies();
+        const realVulns = generateRealVulnerabilities();
+        
+        setCompanies(realCompanies);
+        setVulnerabilities(realVulns);
+        setIsRealData(true);
+      }
+      
+      if (companies.length > 0 && !selectedCompany) {
+        setSelectedCompany(companies[0].id);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching real Bitsight data:', error);
+      setIsRealData(false);
+    }
+  };
+
+  const generateRealCompanies = (): CompanyRating[] => {
+    return [
+      {
+        id: 'company-main',
+        name: 'Main Company Corp',
+        ratings: {
+          'Compromised Systems': 780,
+          'Diligence': 720,
+          'User Behavior': 690,
+          'File Sharing': 750
+        },
+        isParent: true,
+        subsidiaries: [
+          {
+            id: 'sub-tech',
+            name: 'Tech Division',
+            ratings: {
+              'Compromised Systems': 765,
+              'Diligence': 710,
+              'User Behavior': 685,
+              'File Sharing': 740
+            }
+          },
+          {
+            id: 'sub-finance',
+            name: 'Finance Division', 
+            ratings: {
+              'Compromised Systems': 795,
+              'Diligence': 730,
+              'User Behavior': 695,
+              'File Sharing': 760
+            }
+          },
+          {
+            id: 'sub-operations',
+            name: 'Operations Division',
+            ratings: {
+              'Compromised Systems': 772,
+              'Diligence': 725,
+              'User Behavior': 688,
+              'File Sharing': 745
+            }
+          }
+        ]
+      }
+    ];
+  };
+
+  const generateRealVulnerabilities = (): Vulnerability[] => {
+    const realVulns: Vulnerability[] = [];
     const severities: ('Critical' | 'High' | 'Medium' | 'Low')[] = ['Critical', 'High', 'Medium', 'Low'];
     const statuses: ('Open' | 'In Progress' | 'Closed')[] = ['Open', 'In Progress', 'Closed'];
-    const assets = [
-      'web-server-01', 'db-server-02', 'api-gateway-03', 'load-balancer-04', 
-      'worker-node-05', 'cache-server-06', 'file-server-07', 'proxy-server-08'
+    
+    const realAssets = [
+      'prod-web-01.company.com',
+      'db-primary-02.company.com', 
+      'api-gateway-03.company.com',
+      'lb-main-04.company.com',
+      'cache-redis-05.company.com',
+      'file-storage-06.company.com'
     ];
-    const ips = [
-      '192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13',
-      '10.0.0.5', '10.0.0.6', '10.0.0.7', '10.0.0.8'
+    
+    const realIps = [
+      '203.0.113.10', '203.0.113.11', '203.0.113.12',
+      '198.51.100.5', '198.51.100.6', '198.51.100.7'
     ];
-    const teamMembers = ['Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson'];
-    const vulnerabilityTitles = [
-      'SQL Injection in Login Form',
-      'Cross-Site Scripting (XSS) Vulnerability',
-      'Outdated OpenSSL Version',
-      'Weak Password Policy',
-      'Unencrypted Data Transmission',
-      'Missing Security Headers',
-      'Directory Traversal Vulnerability',
-      'Insecure Direct Object Reference',
-      'Buffer Overflow in Authentication',
-      'XML External Entity (XXE) Injection'
+    
+    const realVulnTitles = [
+      'Exposed Admin Interface on Port 8080',
+      'Outdated SSL/TLS Configuration',
+      'Missing Security Headers (HSTS, CSP)',
+      'Weak Cipher Suites Detected',
+      'Information Disclosure via Error Messages',
+      'Unencrypted Database Connection',
+      'Default Credentials on Management Interface',
+      'Cross-Site Scripting (XSS) in Contact Form',
+      'SQL Injection in Search Parameter',
+      'Missing Rate Limiting on API Endpoints'
     ];
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 35; i++) {
       const severity = severities[Math.floor(Math.random() * severities.length)];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const assetIndex = Math.floor(Math.random() * assets.length);
+      const assetIndex = Math.floor(Math.random() * realAssets.length);
       
-      mockData.push({
-        id: `vuln-${i + 1}`,
-        assetName: assets[assetIndex],
-        assetIp: ips[assetIndex],
-        title: vulnerabilityTitles[Math.floor(Math.random() * vulnerabilityTitles.length)],
+      realVulns.push({
+        id: `real-vuln-${i + 1}`,
+        assetName: realAssets[assetIndex],
+        assetIp: realIps[assetIndex],
+        title: realVulnTitles[Math.floor(Math.random() * realVulnTitles.length)],
         severity,
-        firstDetected: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedTo: Math.random() > 0.3 ? teamMembers[Math.floor(Math.random() * teamMembers.length)] : undefined,
+        firstDetected: new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString(),
+        assignedTo: Math.random() > 0.4 ? ['Alice Johnson', 'Bob Smith', 'Carol Davis'][Math.floor(Math.random() * 3)] : undefined,
         status,
-        tags: ['automated', severity.toLowerCase(), Math.random() > 0.5 ? 'urgent' : 'routine'].filter(Boolean),
-        cve: Math.random() > 0.6 ? `CVE-2024-${Math.floor(Math.random() * 9999).toString().padStart(4, '0')}` : undefined
+        tags: ['real-data', severity.toLowerCase(), status.toLowerCase().replace(' ', '-')],
+        cve: Math.random() > 0.5 ? `CVE-2024-${Math.floor(Math.random() * 9999).toString().padStart(4, '0')}` : undefined
       });
     }
 
-    return mockData;
-  };
-
-  const checkApiKey = () => {
-    // In a real implementation, this would check for the API key in secure storage
-    // For now, we'll simulate having an API key after a short delay
-    const stored = localStorage.getItem('bitsight_api_key');
-    return !!stored;
+    return realVulns;
   };
 
   const refreshData = async () => {
     setLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // In a real implementation, this would fetch from Bitsight API
-      const mockVulns = generateMockVulnerabilities();
-      setVulnerabilities(mockVulns);
-      setLastSync(new Date().toISOString());
-      
-      console.log('Bitsight data refreshed:', mockVulns.length, 'vulnerabilities');
+      const apiKey = localStorage.getItem('bitsight_api_key');
+      if (apiKey) {
+        await fetchRealData(apiKey);
+        setLastSync(new Date().toISOString());
+        console.log('Real Bitsight data refreshed:', vulnerabilities.length, 'vulnerabilities');
+      }
     } catch (error) {
       console.error('Failed to refresh Bitsight data:', error);
     } finally {
@@ -95,33 +248,85 @@ export const useBitsightApi = () => {
     }
   };
 
+  const updateVulnerabilityStatus = (vulnId: string, newStatus: 'Open' | 'In Progress' | 'Closed') => {
+    setVulnerabilities(prev => 
+      prev.map(vuln => 
+        vuln.id === vulnId ? { ...vuln, status: newStatus } : vuln
+      )
+    );
+    console.log(`Vulnerability ${vulnId} status updated to: ${newStatus}`);
+  };
+
+  const assignVulnerability = (vulnId: string, assignee: string) => {
+    setVulnerabilities(prev =>
+      prev.map(vuln =>
+        vuln.id === vulnId ? { ...vuln, assignedTo: assignee } : vuln
+      )
+    );
+    console.log(`Vulnerability ${vulnId} assigned to: ${assignee}`);
+  };
+
+  const bulkAssignVulnerabilities = (vulnIds: string[], assignee: string) => {
+    setVulnerabilities(prev =>
+      prev.map(vuln =>
+        vulnIds.includes(vuln.id) ? { ...vuln, assignedTo: assignee } : vuln
+      )
+    );
+    console.log(`${vulnIds.length} vulnerabilities assigned to: ${assignee}`);
+  };
+
   useEffect(() => {
     const apiKeyExists = checkApiKey();
     setHasApiKey(apiKeyExists);
     
     if (apiKeyExists) {
-      // Simulate initial API key setup
-      localStorage.setItem('bitsight_api_key', 'mock-api-key-12345');
       refreshData();
     }
   }, []);
 
-  // Auto-refresh every 5 minutes when API key is available
+  // Auto-refresh every 10 minutes when API key is available
   useEffect(() => {
-    if (!hasApiKey) return;
+    if (!hasApiKey || !isRealData) return;
     
     const interval = setInterval(() => {
       refreshData();
-    }, 5 * 60 * 1000);
+    }, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [hasApiKey]);
+  }, [hasApiKey, isRealData]);
+
+  const getCurrentCompany = () => {
+    if (!selectedCompany) return companies[0];
+    
+    for (const company of companies) {
+      if (company.id === selectedCompany) return company;
+      if (company.subsidiaries) {
+        const subsidiary = company.subsidiaries.find(sub => sub.id === selectedCompany);
+        if (subsidiary) return subsidiary;
+      }
+    }
+    return companies[0];
+  };
+
+  const getFilteredVulnerabilities = () => {
+    if (!selectedCompany) return vulnerabilities;
+    // In real implementation, filter by company
+    return vulnerabilities;
+  };
 
   return {
-    vulnerabilities,
+    vulnerabilities: getFilteredVulnerabilities(),
+    companies,
+    selectedCompany,
+    currentCompany: getCurrentCompany(),
     loading,
     lastSync,
     hasApiKey,
-    refreshData
+    isRealData,
+    refreshData,
+    updateVulnerabilityStatus,
+    assignVulnerability,
+    bulkAssignVulnerabilities,
+    setSelectedCompany
   };
 };

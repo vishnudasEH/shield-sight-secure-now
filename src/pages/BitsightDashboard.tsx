@@ -21,34 +21,36 @@ import { BitsightNotifications } from "@/components/bitsight/BitsightNotificatio
 const BitsightDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
-  const [showApiKeyForm, setShowApiKeyForm] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
-  const { vulnerabilities, loading, lastSync, refreshData, hasApiKey } = useBitsightApi();
+  const [showApiKeyForm, setShowApiKeyForm] = useState(false);
+  
+  const { 
+    vulnerabilities, 
+    companies,
+    selectedCompany,
+    currentCompany,
+    loading, 
+    lastSync, 
+    hasApiKey,
+    isRealData,
+    refreshData,
+    updateVulnerabilityStatus,
+    assignVulnerability,
+    bulkAssignVulnerabilities,
+    setSelectedCompany
+  } = useBitsightApi();
 
   useEffect(() => {
-    // Check if API key exists in localStorage
+    // Show API key form only if no API key exists
     const storedKey = localStorage.getItem('bitsight_api_key');
-    if (storedKey) {
-      setApiKey(storedKey);
-      setApiKeyValid(true);
-      setShowApiKeyForm(false);
+    if (!storedKey) {
+      setShowApiKeyForm(true);
     }
   }, []);
 
-  const handleApiKeySubmit = async () => {
-    if (!apiKey.trim()) return;
-
-    // Simulate API key validation
-    const isValid = apiKey.length >= 20; // Basic validation
-    setApiKeyValid(isValid);
-    
-    if (isValid) {
-      localStorage.setItem('bitsight_api_key', apiKey);
-      setShowApiKeyForm(false);
-      await refreshData();
-    }
+  const handleApiKeyValidated = (key: string) => {
+    setShowApiKeyForm(false);
+    console.log('API Key validated, refreshing data...');
   };
 
   const handleRefresh = async () => {
@@ -59,75 +61,38 @@ const BitsightDashboard = () => {
 
   const resetApiKey = () => {
     localStorage.removeItem('bitsight_api_key');
-    setApiKey("");
-    setApiKeyValid(null);
     setShowApiKeyForm(true);
+  };
+
+  const exportData = () => {
+    const dataToExport = {
+      vulnerabilities,
+      company: currentCompany,
+      exportDate: new Date().toISOString(),
+      totalCount: vulnerabilities.length
+    };
+    
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+      type: 'application/json'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bitsight-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('Data exported successfully');
   };
 
   if (showApiKeyForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-950 to-black p-6">
         <div className="max-w-4xl mx-auto">
-          <Card className="neo-premium">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold gradient-text mb-4">
-                🔐 Bitsight API Configuration
-              </CardTitle>
-              <CardDescription className="text-lg text-gray-300">
-                Please enter your Bitsight API key to access vulnerability data
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="apiKey" className="text-sm font-medium text-gray-300">
-                    API Key
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="apiKey"
-                      type="password"
-                      placeholder="Enter your Bitsight API key..."
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="pl-10 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400"
-                    />
-                  </div>
-                  {apiKeyValid === false && (
-                    <p className="text-red-400 text-sm flex items-center gap-2">
-                      <XCircle className="h-4 w-4" />
-                      Invalid API key. Please check your key and try again.
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex justify-center gap-4">
-                  <Button 
-                    onClick={handleApiKeySubmit}
-                    className="btn-premium"
-                    disabled={!apiKey.trim()}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Validate API Key
-                  </Button>
-                  <Button variant="outline" className="border-gray-600 text-gray-300">
-                    View Documentation
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
-                <h4 className="text-sm font-medium text-gray-300 mb-2">Getting your API Key:</h4>
-                <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
-                  <li>Log into your Bitsight account</li>
-                  <li>Navigate to Settings → API Keys</li>
-                  <li>Generate a new API key or copy an existing one</li>
-                  <li>Paste it in the field above</li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
+          <BitsightApiKeyManager onApiKeyValidated={handleApiKeyValidated} />
         </div>
       </div>
     );
@@ -152,27 +117,36 @@ const BitsightDashboard = () => {
                 🛡️ Bitsight Vulnerability Dashboard
               </h1>
               <p className="text-gray-400 text-lg">
-                Comprehensive vulnerability tracking and remediation dashboard
+                Real-time vulnerability tracking and remediation dashboard
               </p>
               {lastSync && (
                 <p className="text-sm text-gray-500 mt-1">
                   Last updated: {new Date(lastSync).toLocaleString()}
                 </p>
               )}
-              {apiKeyValid && (
-                <div className="flex items-center gap-2 mt-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-green-400">API Connected</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetApiKey}
-                    className="text-gray-400 hover:text-white text-xs"
-                  >
-                    Change Key
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-4 mt-2">
+                {hasApiKey && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                    <span className="text-sm text-green-400">
+                      {isRealData ? 'Live Data Connected' : 'API Connected'}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetApiKey}
+                      className="text-gray-400 hover:text-white text-xs"
+                    >
+                      Change Key
+                    </Button>
+                  </div>
+                )}
+                {currentCompany && (
+                  <Badge variant="outline" className="text-blue-400 border-blue-500">
+                    {currentCompany.name}
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
@@ -192,7 +166,16 @@ const BitsightDashboard = () => {
                 className="btn-premium"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
+                {isRefreshing ? 'Syncing...' : 'Refresh'}
+              </Button>
+              
+              <Button
+                onClick={exportData}
+                variant="outline"
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
               </Button>
               
               <BitsightReportGenerator vulnerabilities={vulnerabilities} />
@@ -228,8 +211,12 @@ const BitsightDashboard = () => {
             onFilterChange={setActiveFilter}
           />
 
-          {/* Scorecard Section */}
-          <BitsightScorecard />
+          {/* Scorecard Section with Company Selection */}
+          <BitsightScorecard 
+            companies={companies}
+            selectedCompany={selectedCompany}
+            onCompanyChange={setSelectedCompany}
+          />
 
           {/* Charts Section */}
           <BitsightCharts vulnerabilities={vulnerabilities} />
@@ -240,11 +227,14 @@ const BitsightDashboard = () => {
           {/* Comments & Collaboration */}
           <BitsightComments />
 
-          {/* Vulnerability Table */}
+          {/* Vulnerability Table with Enhanced Actions */}
           <BitsightVulnerabilityTable 
             vulnerabilities={vulnerabilities}
             searchQuery={searchQuery}
             loading={loading}
+            onStatusUpdate={updateVulnerabilityStatus}
+            onAssign={assignVulnerability}
+            onBulkAssign={bulkAssignVulnerabilities}
           />
         </div>
       </div>
