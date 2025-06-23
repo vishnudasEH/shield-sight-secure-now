@@ -45,7 +45,7 @@ export const useBitsightApi = () => {
       console.log('Fetching real Bitsight data with validated API key...');
       
       // Fetch companies from real Bitsight API
-      const companiesResponse = await fetch('https://api.bitsighttech.com/ratings/v1/companies', {
+      const companiesResponse = await fetch('https://api.bitsighttech.com/companies', {
         headers: { 
           'Authorization': `Token ${apiKey}`,
           'Content-Type': 'application/json',
