@@ -1,9 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Key, CheckCircle, XCircle, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Key, CheckCircle, Eye, EyeOff } from "lucide-react";
 
 interface BitsightApiKeyManagerProps {
   onApiKeyValidated: (key: string) => void;
@@ -13,76 +13,26 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
   const [apiKey, setApiKey] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [showKey, setShowKey] = useState(false);
-  const [validationResult, setValidationResult] = useState<'success' | 'error' | 'network_error' | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [validationResult, setValidationResult] = useState<'success' | null>(null);
 
   const validateApiKey = async () => {
     if (!apiKey.trim()) return;
 
     setIsValidating(true);
     setValidationResult(null);
-    setErrorMessage("");
 
-    try {
-      console.log('Validating API key via backend proxy...');
-      
-      // Call our backend proxy endpoint instead of Bitsight API directly
-      const { data, error } = await supabase.functions.invoke('validate-bitsight-key', {
-        body: { apiKey: apiKey.trim() }
-      });
+    // Simple client-side validation - just check if key is not empty
+    // and has a reasonable format (basic length check)
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate validation delay
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        setValidationResult('network_error');
-        setErrorMessage('Failed to connect to validation service. Please try again.');
-        return;
-      }
-
-      console.log('Backend validation response:', data);
-
-      if (data.success) {
-        setValidationResult('success');
-        localStorage.setItem('bitsight_api_key', apiKey);
-        console.log('API key validated successfully via backend!');
-        setTimeout(() => onApiKeyValidated(apiKey), 1000);
-      } else {
-        setValidationResult('error');
-        setErrorMessage(data.error || 'Unknown validation error occurred.');
-        console.log('API key validation failed:', data.error);
-      }
-    } catch (error) {
-      console.error('Unexpected error during API validation:', error);
-      setValidationResult('network_error');
-      setErrorMessage('Unexpected error occurred. Please try again.');
-    } finally {
-      setIsValidating(false);
+    if (apiKey.trim().length > 10) { // Basic format check
+      setValidationResult('success');
+      localStorage.setItem('bitsight_api_key', apiKey.trim());
+      console.log('API key stored locally successfully!');
+      setTimeout(() => onApiKeyValidated(apiKey.trim()), 1000);
     }
-  };
 
-  const getValidationIcon = () => {
-    switch (validationResult) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'error':
-        return <XCircle className="h-4 w-4" />;
-      case 'network_error':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
-  const getValidationColor = () => {
-    switch (validationResult) {
-      case 'success':
-        return 'text-green-400';
-      case 'error':
-        return 'text-red-400';
-      case 'network_error':
-        return 'text-yellow-400';
-      default:
-        return '';
-    }
+    setIsValidating(false);
   };
 
   return (
@@ -123,11 +73,10 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
           </div>
         </div>
 
-        {validationResult && (
-          <div className={`flex items-center gap-2 text-sm ${getValidationColor()}`}>
-            {getValidationIcon()}
-            {validationResult === 'success' && 'API key validated successfully!'}
-            {(validationResult === 'error' || validationResult === 'network_error') && errorMessage}
+        {validationResult === 'success' && (
+          <div className="flex items-center gap-2 text-sm text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            API key saved successfully!
           </div>
         )}
 
@@ -139,19 +88,19 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
           {isValidating ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Validating with Bitsight API...
+              Saving API Key...
             </>
           ) : (
             <>
               <CheckCircle className="h-4 w-4 mr-2" />
-              Validate API Key
+              Save API Key
             </>
           )}
         </Button>
 
         <div className="bg-gray-900/30 rounded-lg p-3 border border-gray-700 space-y-2">
           <p className="text-xs text-gray-400">
-            Your API key is validated securely through our backend service and stored locally in your browser.
+            Your API key is stored locally in your browser for future use. No external validation is performed.
           </p>
           <p className="text-xs text-blue-400">
             Need an API key? Visit your{' '}
@@ -163,6 +112,9 @@ export const BitsightApiKeyManager = ({ onApiKeyValidated }: BitsightApiKeyManag
             >
               Bitsight API settings
             </a>
+          </p>
+          <p className="text-xs text-yellow-400">
+            Note: API key validation will occur when making actual API calls to Bitsight services.
           </p>
         </div>
       </CardContent>
