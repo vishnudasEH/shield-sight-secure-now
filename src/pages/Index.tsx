@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target, Menu, X, Search } from "lucide-react";
+import { Shield, Scan, AlertTriangle, FileText, Users, Settings, Server, Target, Menu, X, Search, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { VulnerabilityDashboard } from "@/components/VulnerabilityDashboard";
@@ -14,6 +14,7 @@ import { RiskManagement } from "@/components/RiskManagement";
 import { CloudflareScanner } from "@/components/CloudflareScanner";
 import BitsightDashboard from "@/pages/BitsightDashboard";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 
 // Custom Bitsight icon SVG component
 const BitsightIcon = ({ className }: { className?: string }) => (
@@ -80,6 +81,30 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
+              <Link to="/profile">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-300"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </Button>
+              </Link>
+              
+              {profile?.role === 'admin' && (
+                <Link to="/admin/enhanced">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-300"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin Panel
+                  </Button>
+                </Link>
+              )}
+              
               <div className="hidden md:flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900/50 border border-gray-700/50 backdrop-blur-sm">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg">
                   {profile?.first_name?.[0]}{profile?.last_name?.[0]}

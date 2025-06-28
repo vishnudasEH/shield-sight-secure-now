@@ -736,6 +736,33 @@ export type Database = {
           },
         ]
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          token: string
+          used: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -1001,6 +1028,33 @@ export type Database = {
           },
         ]
       }
+      user_activity_logs: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           created_at: string | null
@@ -1030,6 +1084,33 @@ export type Database = {
           related_item_id?: string | null
           related_item_type?: string | null
           title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          id: string
+          ip_address: string | null
+          login_at: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          login_at?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          login_at?: string | null
+          session_id?: string | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1345,6 +1426,27 @@ export type Database = {
         Args: { severity_level: string }
         Returns: number
       }
+      get_users_with_profiles: {
+        Args: {
+          search_term?: string
+          role_filter?: string
+          status_filter?: string
+          limit_count?: number
+          offset_count?: number
+        }
+        Returns: {
+          user_id: string
+          email: string
+          first_name: string
+          last_name: string
+          role: string
+          status: string
+          created_at: string
+          last_sign_in_at: string
+          email_confirmed_at: string
+          banned_until: string
+        }[]
+      }
       get_vulnerability_counts_by_assignee: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1363,6 +1465,14 @@ export type Database = {
       is_sla_breached: {
         Args: { created_timestamp: string; severity: string }
         Returns: boolean
+      }
+      log_user_activity: {
+        Args: {
+          target_user_id: string
+          action_type: string
+          action_details?: Json
+        }
+        Returns: string
       }
     }
     Enums: {
