@@ -76,70 +76,48 @@ export const AdminSignupManagement = () => {
     setProcessing(request.id);
 
     try {
-      // Create user account using Supabase Auth Admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: request.email,
-        password: 'TempPass123!', // Temporary password - user should reset
-        email_confirm: true,
-        user_metadata: {
-          first_name: request.first_name,
-          last_name: request.last_name,
+      console.log('Approving user request:', request.id);
+
+      // Call the secure edge function instead of using Admin API directly
+      const { data, error } = await supabase.functions.invoke('approve-user', {
+        body: {
+          requestId: request.id,
+          userData: {
+            email: request.email,
+            first_name: request.first_name,
+            last_name: request.last_name,
+          }
         }
       });
 
-      if (authError) {
-        console.error('Auth error:', authError);
+      if (error) {
+        console.error('Edge function error:', error);
         toast({
           title: "Error",
-          description: `Failed to create user account: ${authError.message}`,
+          description: `Failed to approve user: ${error.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            first_name: request.first_name,
-            last_name: request.last_name,
-            role: 'user',
-            status: 'approved'
-          });
-
-        if (profileError) {
-          console.error('Profile error:', profileError);
-          toast({
-            title: "Error",
-            description: `Failed to create user profile: ${profileError.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Update signup request status
-        const { error: updateError } = await supabase
-          .from('signup_requests')
-          .update({ 
-            status: 'approved',
-            processed_at: new Date().toISOString()
-          })
-          .eq('id', request.id);
-
-        if (updateError) {
-          console.error('Update error:', updateError);
-        }
-
+      if (!data.success) {
+        console.error('Approval failed:', data.error);
         toast({
-          title: "User Approved",
-          description: `${request.first_name} ${request.last_name} has been approved. They can login with temporary password: TempPass123!`,
+          title: "Error",
+          description: data.error || "Failed to approve user",
+          variant: "destructive",
         });
-
-        // Refresh the list
-        fetchRequests();
+        return;
       }
+
+      toast({
+        title: "User Approved",
+        description: `${request.first_name} ${request.last_name} has been approved. Temporary password: ${data.temporaryPassword}`,
+      });
+
+      // Refresh the list
+      fetchRequests();
+
     } catch (error) {
       console.error('Error approving request:', error);
       toast({
@@ -156,19 +134,30 @@ export const AdminSignupManagement = () => {
     setProcessing(request.id);
 
     try {
-      const { error } = await supabase
-        .from('signup_requests')
-        .update({ 
-          status: 'rejected',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', request.id);
+      console.log('Rejecting user request:', request.id);
+
+      // Call the secure edge function for rejection
+      const { data, error } = await supabase.functions.invoke('reject-user', {
+        body: {
+          requestId: request.id
+        }
+      });
 
       if (error) {
-        console.error('Error rejecting request:', error);
+        console.error('Edge function error:', error);
         toast({
           title: "Error",
-          description: "Failed to reject request",
+          description: `Failed to reject user: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data.success) {
+        console.error('Rejection failed:', data.error);
+        toast({
+          title: "Error",
+          description: data.error || "Failed to reject user",
           variant: "destructive",
         });
         return;
@@ -181,8 +170,14 @@ export const AdminSignupManagement = () => {
 
       // Refresh the list
       fetchRequests();
+
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error rejecting request:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setProcessing(null);
     }
@@ -193,52 +188,34 @@ export const AdminSignupManagement = () => {
     setCreating(true);
 
     try {
-      // Create the auth user first
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUserForm.email,
-        password: newUserForm.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: newUserForm.firstName,
-          last_name: newUserForm.lastName,
+      console.log('Creating new user:', newUserForm.email);
+
+      // Call the secure edge function for user creation
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserForm.email,
+          password: newUserForm.password,
+          firstName: newUserForm.firstName,
+          lastName: newUserForm.lastName,
+          role: newUserForm.role,
         }
       });
 
-      if (authError) {
-        console.error('Auth creation error:', authError);
+      if (error) {
+        console.error('Edge function error:', error);
         toast({
           title: "Error",
-          description: `Failed to create auth user: ${authError.message}`,
+          description: `Failed to create user: ${error.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      if (!authData.user) {
+      if (!data.success) {
+        console.error('User creation failed:', data.error);
         toast({
           title: "Error",
-          description: "Failed to create user - no user data returned",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Now create the profile with the auth user ID
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          first_name: newUserForm.firstName,
-          last_name: newUserForm.lastName,
-          role: newUserForm.role,
-          status: 'approved'
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        toast({
-          title: "Error",
-          description: `Failed to create user profile: ${profileError.message}`,
+          description: data.error || "Failed to create user",
           variant: "destructive",
         });
         return;
@@ -259,7 +236,7 @@ export const AdminSignupManagement = () => {
       });
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error creating user:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
