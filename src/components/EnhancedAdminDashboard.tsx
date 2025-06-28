@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,7 +94,7 @@ export const EnhancedAdminDashboard = () => {
   const handleBanUser = async (userId: string, ban: boolean) => {
     try {
       const { error } = await supabase.auth.admin.updateUserById(userId, {
-        ban: ban
+        banned_until: ban ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : 'none'
       });
 
       if (error) throw error;
@@ -227,7 +226,7 @@ export const EnhancedAdminDashboard = () => {
   };
 
   const getStatusBadge = (status: string, bannedUntil: string) => {
-    if (bannedUntil) {
+    if (bannedUntil && bannedUntil !== 'none') {
       return <Badge variant="destructive">Banned</Badge>;
     }
     
@@ -415,10 +414,10 @@ export const EnhancedAdminDashboard = () => {
                             {/* Ban/Unban */}
                             <Button
                               size="sm"
-                              variant={userData.banned_until ? "default" : "destructive"}
-                              onClick={() => handleBanUser(userData.user_id, !userData.banned_until)}
+                              variant={userData.banned_until && userData.banned_until !== 'none' ? "default" : "destructive"}
+                              onClick={() => handleBanUser(userData.user_id, !(userData.banned_until && userData.banned_until !== 'none'))}
                             >
-                              {userData.banned_until ? <CheckCircle className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                              {userData.banned_until && userData.banned_until !== 'none' ? <CheckCircle className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                             </Button>
                             
                             {/* Reset Password */}
