@@ -94,7 +94,7 @@ export const EnhancedAdminDashboard = () => {
   const handleBanUser = async (userId: string, ban: boolean) => {
     try {
       const { error } = await supabase.auth.admin.updateUserById(userId, {
-        banned_until: ban ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : 'none'
+        ban_duration: ban ? '876000h' : 'none' // 876000h = ~100 years, 'none' = unban
       });
 
       if (error) throw error;
