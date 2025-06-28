@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: authData, error: authCreationError } = await supabaseAdmin.auth.admin.createUser({
       email: userData.email,
       password: 'TempPass123!', // Temporary password - user should reset
-      email_confirm: true,
+      email_confirm: true, // Confirm email immediately
       user_metadata: {
         first_name: userData.first_name,
         last_name: userData.last_name,
@@ -133,6 +133,23 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
       );
+    }
+
+    // Additional confirmation step - ensure user is properly activated
+    const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
+      authData.user.id,
+      {
+        email_confirm: true,
+        ban: false
+      }
+    );
+
+    if (confirmError) {
+      console.error('User confirmation error:', confirmError);
+      // Don't return error here as user was already created successfully
+      console.log('User created but confirmation step failed - user should still be able to log in');
+    } else {
+      console.log('User email confirmed successfully');
     }
 
     // Create profile using admin client
@@ -179,7 +196,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `User ${userData.first_name} ${userData.last_name} has been approved successfully`,
+        message: `User ${userData.first_name} ${userData.last_name} has been approved and can now log in`,
         temporaryPassword: 'TempPass123!'
       }),
       {
