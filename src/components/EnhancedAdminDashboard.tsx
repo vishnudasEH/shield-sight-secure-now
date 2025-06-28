@@ -66,6 +66,14 @@ export const EnhancedAdminDashboard = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      console.log('Fetching users with params:', {
+        search_term: searchTerm || null,
+        role_filter: roleFilter || null,
+        status_filter: statusFilter || null,
+        limit_count: pageSize,
+        offset_count: currentPage * pageSize
+      });
+
       const { data, error } = await supabase.rpc('get_users_with_profiles', {
         search_term: searchTerm || null,
         role_filter: roleFilter || null,
@@ -74,7 +82,13 @@ export const EnhancedAdminDashboard = () => {
         offset_count: currentPage * pageSize
       });
 
-      if (error) throw error;
+      console.log('RPC response:', { data, error });
+
+      if (error) {
+        console.error('RPC Error details:', error);
+        throw error;
+      }
+      
       setUsers(data || []);
       
       // Calculate total pages (approximate)
@@ -83,7 +97,7 @@ export const EnhancedAdminDashboard = () => {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || 'Failed to fetch users',
         variant: "destructive",
       });
     } finally {
