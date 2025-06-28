@@ -66,23 +66,13 @@ export const EnhancedAdminDashboard = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      console.log('Fetching users with params:', {
-        search_term: searchTerm || null,
-        role_filter: roleFilter || null,
-        status_filter: statusFilter || null,
-        limit_count: pageSize,
-        offset_count: currentPage * pageSize
-      });
-
       const { data, error } = await supabase.rpc('get_users_with_profiles', {
-        search_term: searchTerm || null,
-        role_filter: roleFilter || null,
-        status_filter: statusFilter || null,
+        search_term: searchTerm?.trim() ? searchTerm : null,
+        role_filter: roleFilter?.trim() ? roleFilter : null,
+        status_filter: statusFilter?.trim() ? statusFilter : null,
         limit_count: pageSize,
         offset_count: currentPage * pageSize
       });
-
-      console.log('RPC response:', { data, error });
 
       if (error) {
         console.error('RPC Error details:', error);
