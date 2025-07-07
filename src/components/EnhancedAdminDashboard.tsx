@@ -51,8 +51,8 @@ export const EnhancedAdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -83,9 +83,9 @@ export const EnhancedAdminDashboard = () => {
       console.log('Calling get_users_with_profiles RPC...');
       
       const { data, error } = await supabase.rpc('get_users_with_profiles', {
-        search_term: searchTerm?.trim() ? searchTerm : null,
-        role_filter: roleFilter?.trim() ? roleFilter : null,
-        status_filter: statusFilter?.trim() ? statusFilter : null,
+        search_term: searchTerm?.trim() || null,
+        role_filter: roleFilter === 'all' ? null : roleFilter,
+        status_filter: statusFilter === 'all' ? null : statusFilter,
         limit_count: pageSize,
         offset_count: currentPage * pageSize
       });
@@ -363,7 +363,7 @@ export const EnhancedAdminDashboard = () => {
                     <SelectValue placeholder="All roles" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All roles</SelectItem>
+                    <SelectItem value="all">All roles</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="user">User</SelectItem>
                   </SelectContent>
@@ -377,7 +377,7 @@ export const EnhancedAdminDashboard = () => {
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
@@ -389,8 +389,8 @@ export const EnhancedAdminDashboard = () => {
                 <Button
                   onClick={() => {
                     setSearchTerm('');
-                    setRoleFilter('');
-                    setStatusFilter('');
+                    setRoleFilter('all');
+                    setStatusFilter('all');
                     setCurrentPage(0);
                   }}
                   variant="outline"
