@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,15 +58,30 @@ export const EnhancedAdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const pageSize = 10;
 
+  console.log('EnhancedAdminDashboard - Current user:', user?.email);
+  console.log('EnhancedAdminDashboard - Current profile:', profile);
+
   useEffect(() => {
-    fetchUsers();
-  }, [searchTerm, roleFilter, statusFilter, currentPage]);
+    if (profile?.role === 'admin') {
+      fetchUsers();
+    }
+  }, [searchTerm, roleFilter, statusFilter, currentPage, profile]);
 
   const fetchUsers = async () => {
+    if (!profile || profile.role !== 'admin') {
+      console.log('Not admin, skipping fetch');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log('Calling get_users_with_profiles RPC...');
+      
       const { data, error } = await supabase.rpc('get_users_with_profiles', {
         search_term: searchTerm?.trim() ? searchTerm : null,
         role_filter: roleFilter?.trim() ? roleFilter : null,
@@ -74,8 +90,11 @@ export const EnhancedAdminDashboard = () => {
         offset_count: currentPage * pageSize
       });
 
+      console.log('RPC response:', { data, error });
+
       if (error) {
         console.error('RPC Error details:', error);
+        setError(`Failed to fetch users: ${error.message}`);
         throw error;
       }
       
@@ -85,6 +104,7 @@ export const EnhancedAdminDashboard = () => {
       setTotalPages(Math.ceil((data?.length || 0) / pageSize) + (data?.length === pageSize ? 1 : 0));
     } catch (error: any) {
       console.error('Error fetching users:', error);
+      setError(error.message || 'Failed to fetch users');
       toast({
         title: "Error",
         description: error.message || 'Failed to fetch users',
@@ -94,6 +114,46 @@ export const EnhancedAdminDashboard = () => {
       setLoading(false);
     }
   };
+
+  // Check if user is not admin
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <Card className="glass-effect border-white/10 max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="h-8 w-8 text-white animate-pulse" />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-white">Loading...</h2>
+            <p className="text-gray-400">
+              Checking authentication status...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (profile?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <Card className="glass-effect border-white/10 max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-white">Access Denied</h2>
+            <p className="text-gray-400 mb-4">
+              You don't have permission to access the admin dashboard.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Current role: {profile?.role || 'none'} | Status: {profile?.status || 'none'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleBanUser = async (userId: string, ban: boolean) => {
     try {
@@ -257,24 +317,6 @@ export const EnhancedAdminDashboard = () => {
     }
   };
 
-  if (profile?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <Card className="glass-effect border-white/10 max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="text-xl font-bold mb-2 text-white">Access Denied</h2>
-            <p className="text-gray-400">
-              You don't have permission to access the admin dashboard.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -284,6 +326,11 @@ export const EnhancedAdminDashboard = () => {
             Enhanced Admin Dashboard
           </h1>
           <p className="text-gray-400">Comprehensive user management and administration</p>
+          {error && (
+            <div className="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
