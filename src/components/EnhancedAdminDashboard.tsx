@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,7 +79,13 @@ export const EnhancedAdminDashboard = () => {
     setError(null);
     
     try {
-      console.log('Calling get_users_with_profiles RPC...');
+      console.log('Calling get_users_with_profiles RPC with params:', {
+        search_term: searchTerm?.trim() || null,
+        role_filter: roleFilter === 'all' ? null : roleFilter,
+        status_filter: statusFilter === 'all' ? null : statusFilter,
+        limit_count: pageSize,
+        offset_count: currentPage * pageSize
+      });
       
       const { data, error } = await supabase.rpc('get_users_with_profiles', {
         search_term: searchTerm?.trim() || null,
@@ -98,6 +103,7 @@ export const EnhancedAdminDashboard = () => {
         throw error;
       }
       
+      console.log('Successfully fetched users:', data?.length || 0);
       setUsers(data || []);
       
       // Calculate total pages (approximate)
