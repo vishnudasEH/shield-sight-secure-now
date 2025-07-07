@@ -1,6 +1,5 @@
 
-
--- Fix the get_users_with_profiles function to resolve ambiguous column reference
+-- Fix the ambiguous status column reference in the admin check
 CREATE OR REPLACE FUNCTION public.get_users_with_profiles(
   search_term text DEFAULT NULL::text, 
   role_filter text DEFAULT NULL::text, 
@@ -38,7 +37,7 @@ BEGIN
     au.email,
     p.first_name,
     p.last_name,
-    p.role,  -- Explicitly specify this comes from profiles table
+    p.role,
     p.status,
     au.created_at,
     au.last_sign_in_at,
@@ -51,11 +50,10 @@ BEGIN
      au.email ILIKE '%' || search_term || '%' OR
      p.first_name ILIKE '%' || search_term || '%' OR
      p.last_name ILIKE '%' || search_term || '%')
-    AND (role_filter IS NULL OR p.role = role_filter)  -- Explicitly specify profiles.role
+    AND (role_filter IS NULL OR p.role = role_filter)
     AND (status_filter IS NULL OR p.status = status_filter)
   ORDER BY au.created_at DESC
   LIMIT limit_count
   OFFSET offset_count;
 END;
 $function$
-
